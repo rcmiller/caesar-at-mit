@@ -110,6 +110,15 @@ def dashboard_for(request, dashboard_user, new_task_count = 0, allow_requesting_
                 all_comments.append((comment, comment.created, False))
         return all_comments
 
+#   Code below is for the notifications version of this method.
+#    def collect_comments_from_submissions(submissions):
+#        all_notifications = []
+#        for submission in submissions:
+#            user_submission_notifications = Notification.objects.filter(recipient=dashboard_user).filter(reason='C')
+#            for notification in user_submission_notifications:  #this is done to have a list of comments instead of a list of lists.
+#                all_notifications.append((notification, notification.created, notification.reason))
+#        return all_notifications
+
     '''
     Returns a list of tuples in the form of (reply, reply.created, list_as_reply=True) where reply is a comment that is a child
     to a parent comment created by the dashboard user.
@@ -125,6 +134,17 @@ def dashboard_for(request, dashboard_user, new_task_count = 0, allow_requesting_
                         #NOTE: remember to use the version with this being True if a duplicate appears
                         replies.append((comment, comment.created, True))
         return replies
+
+#   Code below is for the notifications version of this method.
+#    def collect_replies_to_user(submissions):
+#        replies = []
+#        for submission in submissions:
+#            submission_notifications = Notification.objects.filter(recipient=dashboard_user).filter(reason='R')
+#            for notification in submission_notifications:
+#                if notification.comment.parent is not None:
+#                    if notification.comment.parent.author == dashboard_user:
+#                        replies.append((notification, notification.created, notification.reason))
+#        return replies
 
     '''
     Returns a list of comments with recent vote activity, with the comment with the most recent

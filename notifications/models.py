@@ -30,6 +30,7 @@ class Notification(models.Model):
 
     submission = models.ForeignKey(Submission, blank=True, null=True, related_name='notifications')
     comment = models.ForeignKey(Comment, blank=True, null=True, related_name='notifications')
+#    vote = models.ForeignKey(Vote, blank=True, null=True, related_name='notifications')
     recipient = models.ForeignKey(User, related_name='notifications')
     reason = models.CharField(max_length=1, blank=True, choices=REASON_CHOICES)
     created = models.DateTimeField(auto_now_add=True)
@@ -46,6 +47,8 @@ NEW_SUBMISSION_COMMENT_SUBJECT_TEMPLATE = Template(
 NEW_REPLY_SUBJECT_TEMPLATE = Template(
         "[{{ site.name }}] {{ comment.author.get_full_name|default:comment.author.username }} replied to your comment")
 
+
+#def add_reply_notification
 
 @receiver(post_save, sender=Comment)
 def send_comment_notification(sender, instance, created=False, raw=False, **kwargs):

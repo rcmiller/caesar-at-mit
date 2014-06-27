@@ -90,38 +90,11 @@ $(document).ready(function() {
 <div class='span12 recent-activity'>
     <h2 class='recent-activity-header'>recent activity</h2>
     <table class="recent-stream">
-                    {% for type, comment, snippet, is_vote, vote in review_data %}
-            <tr id="{% if is_vote %}{% if vote.value == 1 %}voteup-{{comment.id}}-{{comment.chunk.id}}
-                                    {% else %}votedown-{{comment.id}}-{{comment.chunk.id}}
-                                    {% endif %}
-                    {% else %}comment-{{comment.id}}-{{comment.chunk.id}}
-                    {% endif %}" class="{% if user.is_staff or user == participant or review_milestone.assignment.semester in semesters_taught %}activity-line{%else%}non-activity-line{%endif%}">
-
-            <td><span class="type" id="{{type}}" title="{{type}}"></span></td>
-            <td>
-                {% if comment.upvote_count == 0 and comment.downvote_count == 0 or is_vote %}
-                    <span class="no-votes"></span>
-                {% endif %}
-                {% if comment.upvote_count > 0 %}
-                    <span class="positive-votes">+{{comment.upvote_count}}</span>
-                {% endif %}
-                {% if comment.upvote_count > 0 and comment.downvote_count > 0 %}/{% endif %}
-                {% if comment.downvote_count > 0 %}
-                    <span class="negative-votes">-{{comment.downvote_count}}</span>
-                {% endif %}
-            </td>
-            <td class="{% if is_vote %}grey-text{% else %}black-text{% endif %} "> {{ snippet }} </td>
-
-
-
-              <td class="grey-text"> {{ comment.chunk.name }} </td>
-              <td class="grey-text"> {{ comment.modified }} </td>
-
-            </tr>
-            {% empty %}
-            {% endfor %}
+        {% if notification.seen == False %}
+            <div>{{notification.comment}}</div>
+        {% endif %}
     </table>
-
+    
 </div>
 
 <div class='span12 current-assignments'>
@@ -188,7 +161,7 @@ $(document).ready(function() {
   </div>
   {% empty %}
   {% endfor %}
-</div> <br>
+</div>
 {% if old_submission_data %}
     <div class="history-submissions"> show previous semesters </div>
     <div id="historic-submissions" class="task-list">
