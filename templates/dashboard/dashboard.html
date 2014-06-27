@@ -125,6 +125,18 @@ $(document).ready(function() {
 </div>
 
 <div class='span12 current-assignments'>
+
+<div class="slack-data">
+  {% for semester, slack_left in current_slack_data %}
+    <div class="semester-slack">
+      <span> {{ semester.subject.name }}: </span>
+      <span> {{slack_left}} slack days left </span>
+    </div>
+  {% empty %}
+      <div> You have no active classes </div>
+  {% endfor %}
+</div>
+
 <div class="assignment-header">
     <h2 class="task-header">upcoming assignments</h2>
 </div>
