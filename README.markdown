@@ -43,7 +43,7 @@ Copy the template for settings_local.py:
     cd /var/django/caesar/caesar
     cp settings_local.py.template settings_local.py
 
-The default settings are intended for development: DEBUG is turned on, a local sqlite database file is used for storing data.  For deploying Caesar as a user-facing web app, you should edit settings_local.py and change settings as explained by the comments.
+The default settings are intended for development: DEBUG is turned on, a local sqlite database file is used for storing data.
 
 ### Collect static files
 
@@ -132,6 +132,18 @@ Now run the setup script:
     sudo /var/django/caesar/setup.sh
 
 
+### Create a MySql database
+
+You will need to create a MySql database to run a deployed instance of Caesar.
+Either install MySql locally, or make a database on some hosted MySql service.
+
+**Make sure your MySql database has its default character set configured to utf8mb4.**
+It's easiest to do it while the database is still fresh and empty.
+Use the `mysql` client to visit your database, and run this command:
+
+    alter database character set utf8mb4;
+
+
 ### Configure Caesar
 
 To point Caesar to the right database, copy the local settings file:
@@ -140,7 +152,6 @@ To point Caesar to the right database, copy the local settings file:
     cp settings_local.py.template settings_local.py
 
 Then edit settings_local.py and change the settings appropriately.
-
 
 ### Collect static files
 
@@ -153,7 +164,6 @@ Collect the static files (CSS, Javascript, images, etc.) from all the apps and l
 Finally, if you are starting a new database, the database needs some setup:
 
     cd /var/django/caesar
-    ./manage.py syncdb         # say "no", don't create superuser yet
     ./manage.py migrate
     ./manage.py createsuperuser
     sudo apachectl graceful    # restart Apache
@@ -161,3 +171,26 @@ Finally, if you are starting a new database, the database needs some setup:
 Finally browse to your web server and try to log in.
 
 
+Unicode Support for MySql
+==========================
+
+If you are using MySql, you need to make sure that the files and comments tables in the database are using the utf8mb4 character set.
+Otherwise you will not be able to have Unicode characters and emojis in source code files or reviewing comments.
+
+To check what the default character set is, use the `mysql` client to visit your database, and run these commands:
+
+    show variables where variable_name = 'character_set_database';
+    show full columns from files;
+    show full columns from comments;
+
+If you see `utf8mb4` or `utf8mb4_general_ci` for all appropriate character set and collations, then it's correctly configured.
+If you see `latin1` or some other character set, your database isn't using Unicode.
+
+To fix the database default:
+
+    alter database character set utf8mb4;
+
+To fix the tables:
+
+    alter table files convert to character set utf8mb4;
+    alter table comments convert to character set utf8mb4;

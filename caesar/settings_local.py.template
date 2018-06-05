@@ -19,11 +19,15 @@ DATABASES = {
         # deployment: use a database server.
 
         # 'ENGINE': 'django.db.backends.mysql',
+        # 'OPTIONS': {'charset': 'utf8mb4'},
+                # *** warning *** : you should create your MySql database with default character set
+                # 'utf8mb4', otherwise you won't be able to upload source files or make reviewer 
+                # comments containing Unicode chars and emojis. See README.markdown for more information.
         # 'NAME': '',
         # 'USER': '',   
         # 'PASSWORD': '',
         # 'HOST': '', 
-        # 'PORT': '',                   
+        # 'PORT': '',
     }
 }
 
