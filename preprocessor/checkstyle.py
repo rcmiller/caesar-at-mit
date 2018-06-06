@@ -10,70 +10,41 @@ checkstyle_settings = {
     'jar': '/var/django/caesar/preprocessor/checkstyle-5.9-all.jar',
     }
 
-def run_checkstyle(path):
-  proc = Popen([
-    'java',
-    '-jar', checkstyle_settings['jar'],
-    '-c', checkstyle_settings['settings'],
-    '-f', 'xml',
-    path],
-    stdout=PIPE)
-  return proc.communicate()[0]
-
-# This probably won't support multi-chunks per file properly
-def generate_comments(chunk, checkstyle_user, batch, suppress_comment_regexes):
-  sys.stdout.flush()
-  sys.stderr.flush()
-  xml = run_checkstyle(chunk.file.path)
-  comment_nodes = find_comment_nodes(xml)
-  comments = []
-  for node in comment_nodes:
-    message = node.getAttribute('message')
-    line = node.getAttribute('line')
-    checkstyleModule = node.getAttribute('source')
-    comments.append(Comment(
-      type='S',
-      text=message,
-      chunk=chunk,
-      batch=batch,
-      author=checkstyle_user,
-      start=line,
-      end=line))
-  print "checkstyle: on", chunk.name, 'I made', len(comments), 'comments'
-  return comments
-
-def matchesAny(regexes, string):
-  for regex in regexes:
-    if re.search(regex, string):
-      return True
-  return False
-
-def find_comment_nodes(xml):
-  dom = parseString(xml)
-
-  # Simple traversal of the DOM to find all errors.
-  # Maybe easier to search for error tag, but this is easier ATM
-  comment_nodes = []
-  to_traverse = [dom]
-  while to_traverse:
-    node = to_traverse.pop()
-    if node.nodeName == 'error' or node.nodeName == 'warning':
-      comment_nodes.append(node)
-    else:
-      to_traverse.extend(node.childNodes)
-  return comment_nodes
-
 def generate_checkstyle_comments(code_objects, save, batch, suppress_comment_regexes):
-  
   checkstyle_user,created = User.objects.get_or_create(username='checkstyle')
 
-  i = 0
   for (submission, files, chunks) in code_objects:
-    i += 1
     print "%s: %s chunks for this submission." % (submission, len(chunks))
-    for chunk in chunks:
-      if chunk.student_lines == 0:
-        continue  # don't run checkstyle on code that student hasn't touched
-      comments = generate_comments(chunk, checkstyle_user, batch, suppress_comment_regexes)
-      if save:
-        [comment.save() for comment in comments]
+
+    chunkMap = dict([(chunk.file.path, chunk) for chunk in chunks if chunk.student_lines > 0])
+
+    sys.stdout.flush()
+    sys.stderr.flush()
+    commandLine = [
+      'java',
+      '-jar', checkstyle_settings['jar'],
+      '-c', checkstyle_settings['settings'],
+      '-f', 'xml'
+      ] + chunkMap.keys()
+    proc = Popen(commandLine, stdout=PIPE)
+    xml = proc.communicate()[0]
+    dom = parseString(xml)
+
+    for fileNode in dom.getElementsByTagName('file'):
+      chunk = chunkMap[fileNode.getAttribute('name')]
+      commentNodes = fileNode.getElementsByTagName('error') + fileNode.getElementsByTagName('warning')
+      for commentNode in commentNodes:
+        message = commentNode.getAttribute('message')
+        line = commentNode.getAttribute('line')
+        checkstyleModule = commentNode.getAttribute('source')
+        comment = Comment(
+          type='S',
+          text=message,
+          chunk=chunk,
+          batch=batch,
+          author=checkstyle_user,
+          start=line,
+          end=line)
+        if save:
+          comment.save()
+      print "checkstyle: on", chunk.name, 'I made', len(commentNodes), 'comments'
