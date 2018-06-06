@@ -3,20 +3,12 @@ from django.contrib.auth.models import User
 from xml.dom.minidom import parseString
 from subprocess import Popen, PIPE
 from collections import defaultdict
-import re
+import re, sys
 
 checkstyle_settings = {
     'settings': '/var/django/caesar/preprocessor/checks.xml',
     'jar': '/var/django/caesar/preprocessor/checkstyle-5.9-all.jar',
     }
-
-# ignored_warnings maps a class type (from the Chunk model)
-# to a set of checkstyle modules whose warnings should be discarded
-# in classes of that type.  The modules should be described by full Java classname.
-ignored_warnings = defaultdict(set, {
-    'test': set([ 'com.puppycrawl.tools.checkstyle.checks.javadoc.JavadocMethodCheck', 
-                  'com.puppycrawl.tools.checkstyle.checks.coding.MagicNumberCheck' ])
-})
 
 def run_checkstyle(path):
   proc = Popen([
@@ -30,26 +22,24 @@ def run_checkstyle(path):
 
 # This probably won't support multi-chunks per file properly
 def generate_comments(chunk, checkstyle_user, batch, suppress_comment_regexes):
+  sys.stdout.flush()
+  sys.stderr.flush()
   xml = run_checkstyle(chunk.file.path)
   comment_nodes = find_comment_nodes(xml)
-  ignored = 0
   comments = []
   for node in comment_nodes:
     message = node.getAttribute('message')
     line = node.getAttribute('line')
     checkstyleModule = node.getAttribute('source')
-    if checkstyleModule in ignored_warnings[chunk.class_type] or matchesAny(suppress_comment_regexes, chunk.file.path + ':' + message):
-      ignored += 1
-    else:
-      comments.append(Comment(
-        type='S',
-        text=message,
-        chunk=chunk,
-        batch=batch,
-        author=checkstyle_user,
-        start=line,
-        end=line))
-  print "checkstyle: on", chunk.name, 'I made', len(comments), 'comments and ignored', ignored, 'minor problems'
+    comments.append(Comment(
+      type='S',
+      text=message,
+      chunk=chunk,
+      batch=batch,
+      author=checkstyle_user,
+      start=line,
+      end=line))
+  print "checkstyle: on", chunk.name, 'I made', len(comments), 'comments'
   return comments
 
 def matchesAny(regexes, string):
