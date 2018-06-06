@@ -1,5 +1,9 @@
-import os, fnmatch
+import os, fnmatch, sys
 from collections import defaultdict
+
+default_excludes = [
+  "*/.*"
+]
 
 def crawl_submissions(base_dir, includes, excludes):
   '''Crawls the students code and returns a dictionary mapping student usernames to
@@ -15,6 +19,7 @@ def crawl_submissions(base_dir, includes, excludes):
   '''
   student_dirs = os.listdir(base_dir)
   student_code = defaultdict(list)
+  unexpected_files = []
 
   def matchesAnyPattern(filename, patterns):
     return reduce(lambda p1,p2: p1 or p2, [fnmatch.fnmatch(filename, pattern) for pattern in patterns], False)
@@ -24,10 +29,25 @@ def crawl_submissions(base_dir, includes, excludes):
     # Make sure we only take non-hidden directories
     if (not os.path.isdir(filepath)) or student_dir[0] == '.':
       continue
+    all_files_for_this_student = []
     for root, _, files in os.walk(filepath):
-      student_code[student_dir].extend([root + '/' + file_path for file_path in files])
-    # Only take files that are included but not excluded.
-    student_code[student_dir] = [filename for filename in student_code[student_dir] 
-                                          if matchesAnyPattern(filename, includes) 
-                                             and not matchesAnyPattern(filename, excludes)]
+      all_files_for_this_student.extend([root + '/' + file_path for file_path in files])
+    for filename in all_files_for_this_student:
+      if matchesAnyPattern(filename, excludes):
+        continue
+      elif matchesAnyPattern(filename, includes):
+        student_code[student_dir].append(filename)
+      elif not matchesAnyPattern(filename, default_excludes):
+        unexpected_files.append(filename)
+
+  if len(unexpected_files) > 0:
+    print >>sys.stderr, """
+unexpected files found:
+    {unexpected_files}
+
+To include these files in Caesar, update the included file patterns of the SubmitMilestone
+and rerun the preprocessor.  The second run of the preprocessor will not reload all submissions,
+only the ones that changed as a result of the updated file pattern.
+""".format(unexpected_files="\n    ".join(unexpected_files))
+
   return student_code
