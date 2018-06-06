@@ -109,7 +109,7 @@ class SubmitMilestone(Milestone):
                 help_text="Folder containing student code for the assignment. Should contain subfolders named by student usernames: abc/, def/, ghi/, etc.")
     included_file_patterns = models.CharField(max_length=300, blank=True, default="*.java *.c *.h *.cpp *.CC *.py",
                 help_text="Filename patterns to upload, separated by whitespace; e.g. *Foo*.java matches Foo.java and src/TheFool/Bar.java")
-    excluded_file_patterns = models.CharField(max_length=300, blank=True, default="",
+    excluded_file_patterns = models.CharField(max_length=300, blank=True, default="*/.* *.class *.jar *.o *.obj *.lib *.pyc",
                 help_text="Filename patterns to exclude from upload, separated by whitespace")
     restrict_access = models.BooleanField(default=False,
                 help_text="If enabled, restrict who can view the students' chunks to the student authors and any assigned reviewers. "

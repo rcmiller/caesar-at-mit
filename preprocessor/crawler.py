@@ -1,10 +1,6 @@
 import os, fnmatch, sys
 from collections import defaultdict
 
-default_excludes = [
-  "*/.*"
-]
-
 def crawl_submissions(base_dir, includes, excludes):
   '''Crawls the students code and returns a dictionary mapping student usernames to
   absolute file paths of their code. NOTE: Does not guarantee that the users exist
@@ -37,7 +33,7 @@ def crawl_submissions(base_dir, includes, excludes):
         continue
       elif matchesAnyPattern(filename, includes):
         student_code[student_dir].append(filename)
-      elif not matchesAnyPattern(filename, default_excludes):
+      else:
         unexpected_files.append(filename)
 
   if len(unexpected_files) > 0:
