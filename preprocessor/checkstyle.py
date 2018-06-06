@@ -14,9 +14,11 @@ def generate_checkstyle_comments(code_objects, save, batch, suppress_comment_reg
   checkstyle_user,created = User.objects.get_or_create(username='checkstyle')
 
   for (submission, files, chunks) in code_objects:
-    print "%s: %s chunks for this submission." % (submission, len(chunks))
-
     chunkMap = dict([(chunk.file.path, chunk) for chunk in chunks if chunk.student_lines > 0])
+    print "%s: %s changed chunks for this submission." % (submission, len(chunkMap))
+
+    if len(chunkMap) == 0:
+      continue
 
     sys.stdout.flush()
     sys.stderr.flush()
@@ -28,7 +30,11 @@ def generate_checkstyle_comments(code_objects, save, batch, suppress_comment_reg
       ] + chunkMap.keys()
     proc = Popen(commandLine, stdout=PIPE)
     xml = proc.communicate()[0]
-    dom = parseString(xml)
+    try:
+      dom = parseString(xml)
+    except:
+      print sys.exc_info()[0]
+      continue
 
     for fileNode in dom.getElementsByTagName('file'):
       chunk = chunkMap[fileNode.getAttribute('name')]
