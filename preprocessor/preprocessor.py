@@ -93,6 +93,7 @@ if settings['save_data']:
   print "Batch ID: %s" % (batch.id)
 
 # Crawling the file system.
+print "Crawling student code in", settings['student_submission_dir']
 student_code = crawl_submissions(settings['student_submission_dir'], settings['include'], settings['exclude'])
 
 code_objects = parse_all_files(student_code, settings['student_submission_dir'], batch, milestone, settings['save_data'], staff_code, settings['restrict'], settings['restrict_to_usernames'])
