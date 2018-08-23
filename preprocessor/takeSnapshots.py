@@ -1,5 +1,5 @@
 #!/usr/bin/env python2.7
-import sys, os, argparse, django, re, datetime, itertools, json
+import sys, os, argparse, django, re, datetime, itertools, json, csv
 from pprint import pprint
 
 # set up Django
@@ -138,37 +138,62 @@ else:
     # returns list of RevisionMaps of length max_extension+1, 
     #    where sweeps[i] is the i-days-late RevisionMap, or None if no sweep found for that day
     def find_sweeps(deadline, max_extension):
-        sweeps_path = os.path.join(ROOT, subject_name, 'didit', semester_abbr, 'sweeps/psets', pset)
-        sweep_filenames = os.listdir(sweeps_path)   
+        old_sweeps_path = os.path.join(ROOT, subject_name, 'didit', semester_abbr, 'sweeps/psets', pset)
 
-        # sweep file for new didit will be
-        #  [header row]
-        #  dash-separated-usernames,sha,... (possibly additional columns)
-        
-        # filename:string, sweeps folder name, assumed to have the form yymmddThhmmss, e.g. '20170122T221500'; 
-        # returns int, number of days after deadline
-        def days_after_deadline(filename):  
-            return (datetime.datetime.strptime(filename, '%Y%m%dT%H%M%S') - deadline).days
+        if os.path.exists(old_sweeps_path):
+            # old Didit: sweeps were stored in JSON files in didit/<semester>/sweeps/psets/<pset>/<yymmddThhmmss>/sweep.json
+            sweep_filenames = os.listdir(old_sweeps_path)
 
-        # choose the first sweep in each 1-day window
-        # make sure we look at them in increasing chron order, since os.listdir() makes no order guarantee
-        sweep_filenames.sort()
-        sweep_filename_for_days_late = [None] * (max_extension + 1)
-        for days_late, group in itertools.groupby(sweep_filenames, days_after_deadline):
-            if days_late >= 0 and days_late <= max_extension:
-                sweep_filename_for_days_late[days_late] = list(group)[0]
+            # sweep file for new didit will be
+            #  [header row]
+            #  dash-separated-usernames,sha,... (possibly additional columns)
 
-        # filename: string, sweeps foldername under sweeps_path
-        # returns RevisionMap of that sweep
-        def load_sweep(filename):
-            with open(os.path.join(sweeps_path, filename, 'sweep.json'), 'r') as f:
-                data = json.load(f)
-                sweep = {}
-                for entry in data['reporevs']:
-                    for user in entry['users']:
-                        sweep[user] = entry['rev']
-                return sweep
-        return [load_sweep(filename) if filename else None for filename in sweep_filename_for_days_late]
+            # filename:string, sweeps folder name, assumed to have the form yymmddThhmmss, e.g. '20170122T221500';
+            # returns int, number of days after deadline
+            def days_after_deadline(filename):
+                return (datetime.datetime.strptime(filename, '%Y%m%dT%H%M%S') - deadline).days
+
+            # choose the first sweep in each 1-day window
+            # make sure we look at them in increasing chron order, since os.listdir() makes no order guarantee
+            sweep_filenames.sort()
+            sweep_filename_for_days_late = [None] * (max_extension + 1)
+            for days_late, group in itertools.groupby(sweep_filenames, days_after_deadline):
+                if days_late >= 0 and days_late <= max_extension:
+                    sweep_filename_for_days_late[days_late] = list(group)[0]
+
+            # filename: string, sweeps foldername under sweeps_path
+            # returns RevisionMap of that sweep
+            def load_json_sweep(filename):
+                with open(os.path.join(sweeps_path, filename, 'sweep.json'), 'r') as f:
+                    data = json.load(f)
+                    sweep = {}
+                    for entry in data['reporevs']:
+                        for user in entry['users']:
+                            sweep[user] = entry['rev']
+                    return sweep
+            return [load_json_sweep(filename) if filename else None for filename in sweep_filename_for_days_late]
+        else:
+            # new Didit: sweeps are stored in CSV files in didit/<semester>/revisions/psets/<pset>/<milestone>/[012].csv
+            new_sweeps_path = os.path.join(ROOT, subject_name, 'didit', semester_abbr, 'revisions/psets', pset, milestone_name)
+
+            # filename: string, sweep CSV file with header row and username as first column, revision as second column
+            #    (and possibly additional columns which are ignored)
+            # returns RevisionMap loaded from that file
+            def load_csv_sweep(filename):
+                try:
+                    with open(filename, 'r') as f:
+                        reader = csv.reader(f)
+                        reader.next() # skip header row
+                        sweep = {}
+                        for row in reader:
+                            username = row[0]
+                            revision = row[1]
+                            sweep[username] = revision
+                    return sweep
+                except IOError:
+                    return None
+            return [load_csv_sweep(os.path.join(new_sweeps_path, str(days_late) + ".csv")) for days_late in range(0, max_extension+1)]
+
 
     # get the RevisionMap for each deadline
     sweeps = find_sweeps(milestone.duedate, milestone.max_extension)
