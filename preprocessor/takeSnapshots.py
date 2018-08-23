@@ -92,6 +92,11 @@ def git_snapshot(repo, revision, target_path, snapshot_even_if_already_exists=Fa
     print command
     os.system(command)
 
+# for Github API, use
+#  https://octokit.github.io/rest.js/#api-Repos-getArchiveLink
+# https://github.mit.edu/6031-fa18
+# starting code in https://github.mit.edu/6031-fa18/ps0
+# student code in https://github.mit.edu/6031-fa18/ps0-username
 
 if args.project:
     def snapshot_projects():
@@ -136,6 +141,10 @@ else:
         sweeps_path = os.path.join(ROOT, subject_name, 'didit', semester_abbr, 'sweeps/psets', pset)
         sweep_filenames = os.listdir(sweeps_path)   
 
+        # sweep file for new didit will be
+        #  [header row]
+        #  dash-separated-usernames,sha,... (possibly additional columns)
+        
         # filename:string, sweeps folder name, assumed to have the form yymmddThhmmss, e.g. '20170122T221500'; 
         # returns int, number of days after deadline
         def days_after_deadline(filename):  
