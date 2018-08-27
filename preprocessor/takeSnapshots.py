@@ -7,6 +7,7 @@ sys.path.insert(0, "/var/django")
 sys.path.insert(0, "/var/django/caesar")
 os.environ.setdefault("DJANGO_SETTINGS_MODULE", "caesar.settings")
 django.setup()
+from django.conf import settings
 
 ROOT='/var/django/caesar/preprocessor'
 
@@ -82,15 +83,26 @@ print "updating snapshots for milestone", milestone.full_name()
 
 
 # take a snapshot from a git repo:string of revision:string and store it at target_path:string 
+# if repo is a folder path, uses git archive
+# if repo is a url of the form "https://github.mit.edu/owner/repo URL", uses Github API 
 def git_snapshot(repo, revision, target_path, snapshot_even_if_already_exists=False):
     if os.path.isdir(target_path):
         if not snapshot_even_if_already_exists:
             return
     else:
         os.makedirs(target_path)
-    command = 'git --git-dir="{repo}" archive "{revision}" | tar x -C "{target_path}"'.format(repo=repo, revision=revision, target_path=target_path)
+    m = re.match(r'^https://github\.mit\.edu/(.*)$', repo)
+    if m:
+        ownerAndRepo = m.group(1)
+        command = 'curl -s -L -u "{accessToken}" "http://github.mit.edu/api/v3/repos/{ownerAndRepo}/tarball/{revision}"'.format(accessToken=settings.GITHUB_TOKEN, ownerAndRepo=ownerAndRepo, revision=revision)
+        compression = 'z'
+    else:
+        command = 'git --git-dir="{repo}" archive "{revision}"'.format(repo=repo, revision=revision)
+        compression = ''
+    command += ' | tar x{compression} -C "{target_path}"'.format(repo=repo, revision=revision, target_path=target_path, compression=compression)
     print command
     os.system(command)
+
 
 # for Github API, use
 #  https://octokit.github.io/rest.js/#api-Repos-getArchiveLink
@@ -244,7 +256,14 @@ else:
     # extracts a snapshot of each user's revision from their git repo (if that snapshot doesn't already exist),
     # and makes a symlink to it in the right place 
     def snapshot_revisions(revision_map):
-        repos_path = os.path.join(ROOT, subject_name, 'git', semester_abbr, 'psets', pset)
+        # old repo locations on AFS, no longer used
+        # repos_path = os.path.join(ROOT, subject_name, 'git', semester_abbr, 'psets', pset)
+
+        # new repo locations are in github.mit.edu
+        repos_url = 'https://github.mit.edu/' + subject_name.replace('.', '') + '-' + semester_abbr + '/' + pset
+        print 'repos_url', repos_url
+
+        # snapshots of code will be stored under code_path folder
         code_path = os.path.join(ROOT, subject_name, 'private', semester_abbr, 'code', pset)
         snapshots_path = os.path.join(code_path, "snapshots")
         milestone_path = os.path.join(code_path, milestone_name)
@@ -253,13 +272,17 @@ else:
         [os.makedirs(path) for path in (snapshots_path, milestone_path) if not os.path.isdir(path)]
 
         # snapshot the starting code in case it hasn't been done yet
-        git_snapshot(os.path.join(repos_path, 'didit/starting.git'), 'HEAD', os.path.join(code_path, 'starting/staff'))
+        # old repo: starting_repo_path = os.path.join(repos_path, 'didit/starting.git')
+        starting_repo_path = repos_url
+        git_snapshot(starting_repo_path, 'HEAD', os.path.join(code_path, 'starting/staff'))
 
         for username in revision_map.keys():
             revision = revision_map[username]
             snapshot_name = username + "-" + revision
             print snapshot_name
-            user_repo = os.path.join(repos_path, username + '.git')
+            
+            # old repo: user_repo = os.path.join(repos_path, username + '.git')
+            user_repo = repos_url + '-' + username
             user_snapshot = os.path.join(code_path, "snapshots", snapshot_name)
             git_snapshot(user_repo, revision, user_snapshot)
             symlink_force(os.path.join('../snapshots', snapshot_name), os.path.join(milestone_path, username))
