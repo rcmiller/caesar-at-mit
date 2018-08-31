@@ -145,14 +145,13 @@ else:
     # RevisionMap is a dictionary mapping
     #   username:string -> revision:string, a revision hash in username's git repo for this pset
 
+    old_sweeps_path = os.path.join(ROOT, subject_name, 'didit', semester_abbr, 'sweeps/psets', pset)
+    if os.path.exists(old_sweeps_path):
 
-    # deadline: datetime, max_extension: int, number of days of slack allowed on this deadline
-    # returns list of RevisionMaps of length max_extension+1, 
-    #    where sweeps[i] is the i-days-late RevisionMap, or None if no sweep found for that day
-    def find_sweeps(deadline, max_extension):
-        old_sweeps_path = os.path.join(ROOT, subject_name, 'didit', semester_abbr, 'sweeps/psets', pset)
-
-        if os.path.exists(old_sweeps_path):
+        # deadline: datetime, max_extension: int, number of days of slack allowed on this deadline
+        # returns list of RevisionMaps of length max_extension+1, 
+        #    where sweeps[i] is the i-days-late RevisionMap, or None if no sweep found for that day
+        def find_sweeps(deadline, max_extension):
             # old Didit: sweeps were stored in JSON files in didit/<semester>/sweeps/psets/<pset>/<yymmddThhmmss>/sweep.json
             sweep_filenames = os.listdir(old_sweeps_path)
 
@@ -184,67 +183,63 @@ else:
                             sweep[user] = entry['rev']
                     return sweep
             return [load_json_sweep(filename) if filename else None for filename in sweep_filename_for_days_late]
-        else:
-            # new Didit: sweeps are stored in CSV files in didit/<semester>/revisions/psets/<pset>/<milestone>/[012].csv
-            new_sweeps_path = os.path.join(ROOT, subject_name, 'didit', semester_abbr, 'revisions/psets', pset, milestone_name)
 
-            # filename: string, sweep CSV file with header row and username as first column, revision as second column
-            #    (and possibly additional columns which are ignored)
-            # returns RevisionMap loaded from that file
-            def load_csv_sweep(filename):
+
+        # sweeps: list of max_extension+1 RevisionMaps, where sweeps[n] is the RevisionMap for n-days-late
+        # returns a new RevisionMap for every registered student whose deadline has passed, selecting the n-days-late revision
+        #     for that student if the student requested n days of slack
+        def select_revisions(sweeps):
+            revisions_by_username = {}
+            usernames_to_select = set([username for sweep in sweeps if sweep for username in sweep.keys()])
+            #pprint(usernames_to_select)
+            if len(restrict_to_usernames) > 0:
+                usernames_to_select = usernames_to_select.intersection(restrict_to_usernames)
+            #pprint(usernames_to_select)
+
+            for username in usernames_to_select:
+                if username in force_revision_for_username:
+                    revisions_by_username[username] = force_revision_for_username[username]
+                    continue
+                if not Member.objects.filter(semester=semester, user__username=username, role=Member.STUDENT).exists():
+                    print username, "found in sweep but not a student, ignoring"
+                    continue
                 try:
-                    with open(filename, 'r') as f:
-                        reader = csv.reader(f)
-                        reader.next() # skip header row
-                        sweep = {}
-                        for row in reader:
-                            username = row[0]
-                            revision = row[1]
-                            sweep[username] = revision
-                    return sweep
-                except IOError:
-                    return None
-            return [load_csv_sweep(os.path.join(new_sweeps_path, str(days_late) + ".csv")) for days_late in range(0, max_extension+1)]
+                    extension = Extension.objects.get(user__username=username, milestone=milestone)
+                    sweep_to_use = extension.slack_used
+                except Extension.DoesNotExist:
+                    pass # this is normal; users who didn't request slack have no Extension object
+                    sweep_to_use = 0 # assume no extension unless we discover otherwise
+                if sweeps[sweep_to_use] and username in sweeps[sweep_to_use]:
+                    revisions_by_username[username] = sweeps[sweep_to_use][username]
+            return revisions_by_username
 
+        # get the RevisionMap for each deadline
+        sweeps = find_sweeps(milestone.duedate, milestone.max_extension)
+        print "found sweeps for", [i for i in range(0,len(sweeps)) if sweeps[i]], "days late"
+        #pprint(sweeps)
+        # now sweep[n] is the RevisionMap for n days late (which may be None, if haven't done the n-day sweep yet)
+        revision_map = select_revisions(sweeps)
 
-    # get the RevisionMap for each deadline
-    sweeps = find_sweeps(milestone.duedate, milestone.max_extension)
-    print "found sweeps for", [i for i in range(0,len(sweeps)) if sweeps[i]], "days late"
-    #pprint(sweeps)
-    # now sweep[n] is the RevisionMap for n days late (which may be None, if haven't done the n-day sweep yet)
+    else:
+        # new Didit: milestone is stored as a CSV file in private/<semester>/code/<pset>/<pset>-<milestone>.csv
+        milestone_filename = os.path.join(ROOT, subject_name, 'private', semester_abbr, 'code', pset, pset + "-" + milestone_name + '.csv')
 
+        # milestone CSV file format:
+        #   - has a header row
+        #   - first column is username, e.g. rcm
+        #   - second column is ="revision", e.g. ="e232523"
+        #   - additional columns which are ignored by this script
+        with open(milestone_filename, 'r') as f:
+            reader = csv.reader(f)
+            reader.next() # skip header row
+            revision_map = {}
+            for row in reader:
+                username = row[0]
+                revision = re.sub(r'^="(.*)"$', r'\1', row[1]) # remove ="..." around the revision hash
+                if len(restrict_to_usernames) == 0 or username in restrict_to_usernames:
+                    revision_map[username] = revision
 
-
-    # sweeps: list of max_extension+1 RevisionMaps, where sweeps[n] is the RevisionMap for n-days-late
-    # returns a new RevisionMap for every registered student whose deadline has passed, selecting the n-days-late revision
-    #     for that student if the student requested n days of slack
-    def select_revisions(sweeps):
-        revisions_by_username = {}
-        usernames_to_select = set([username for sweep in sweeps if sweep for username in sweep.keys()])
-        #pprint(usernames_to_select)
-        if len(restrict_to_usernames) > 0:
-            usernames_to_select = usernames_to_select.intersection(restrict_to_usernames)
-        #pprint(usernames_to_select)
-
-        for username in usernames_to_select:
-            if username in force_revision_for_username:
-                revisions_by_username[username] = force_revision_for_username[username]
-                continue
-            if not Member.objects.filter(semester=semester, user__username=username, role=Member.STUDENT).exists():
-                print username, "found in sweep but not a student, ignoring"
-                continue
-            try:
-                extension = Extension.objects.get(user__username=username, milestone=milestone)
-                sweep_to_use = extension.slack_used
-            except Extension.DoesNotExist:
-                pass # this is normal; users who didn't request slack have no Extension object
-                sweep_to_use = 0 # assume no extension unless we discover otherwise
-            if sweeps[sweep_to_use] and username in sweeps[sweep_to_use]:
-                revisions_by_username[username] = sweeps[sweep_to_use][username]
-        return revisions_by_username
-
-    revision_map = select_revisions(sweeps)
-    print "selected revisions for", len(revision_map), "users whose personal deadlines have passed"
+    print "selected revisions for", len(revision_map), "users"
     pprint(revision_map)
 
     # equivalent to ln -sf target source
@@ -261,7 +256,7 @@ else:
 
         # new repo locations are in github.mit.edu
         repos_url = 'https://github.mit.edu/' + subject_name.replace('.', '') + '-' + semester_abbr + '/' + pset
-        print 'repos_url', repos_url
+        #print 'repos_url', repos_url
 
         # snapshots of code will be stored under code_path folder
         code_path = os.path.join(ROOT, subject_name, 'private', semester_abbr, 'code', pset)
@@ -279,7 +274,7 @@ else:
         for username in revision_map.keys():
             revision = revision_map[username]
             snapshot_name = username + "-" + revision
-            print snapshot_name
+            #print snapshot_name
             
             # old repo: user_repo = os.path.join(repos_path, username + '.git')
             user_repo = repos_url + '-' + username

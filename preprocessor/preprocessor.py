@@ -103,7 +103,7 @@ if parse.failed_users:
   print ','.join(parse.failed_users)
   print "Then rerun the preprocessor."
 
-print "Found %s submissions." % (len(code_objects))
+print "Loaded %s submissions." % (len(code_objects))
 
 if settings['generate_comments']:
   print "Generating checkstyle comments..."
