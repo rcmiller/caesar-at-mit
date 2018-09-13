@@ -46,11 +46,11 @@ function selectText(elementId) {
 
 // Record how user uses the system in the Caesar log
 function logUsage(data) {
-  $.ajax({
-    type: "POST",
-    url: "/log/log/",
-    data: data
-  });
+  // $.ajax({
+  //   type: "POST",
+  //   url: "/log/log/",
+  //   data: data
+  // });
 }
 
 // Clear similarCommentsDB database !important
