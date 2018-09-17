@@ -94,12 +94,9 @@ def git_snapshot(repo, revision, target_path, snapshot_even_if_already_exists=Fa
     m = re.match(r'^https://github\.mit\.edu/(.*)$', repo)
     if m:
         ownerAndRepo = m.group(1)
-        command = 'curl -s -L -u "{accessToken}" "http://github.mit.edu/api/v3/repos/{ownerAndRepo}/tarball/{revision}"'.format(accessToken=settings.GITHUB_TOKEN, ownerAndRepo=ownerAndRepo, revision=revision)
-        compression = 'z'
+        command = 'curl -s -L -u "{accessToken}" "http://github.mit.edu/api/v3/repos/{ownerAndRepo}/tarball/{revision}"  | tar xz -C "{target_path}" --strip-components 1'.format(accessToken=settings.GITHUB_TOKEN, ownerAndRepo=ownerAndRepo, revision=revision, target_path=target_path)
     else:
-        command = 'git --git-dir="{repo}" archive "{revision}"'.format(repo=repo, revision=revision)
-        compression = ''
-    command += ' | tar x{compression} -C "{target_path}"'.format(repo=repo, revision=revision, target_path=target_path, compression=compression)
+        command = 'git --git-dir="{repo}" archive "{revision}" | tar x -C "{target_path}"'.format(repo=repo, revision=revision, target_path=target_path)
     print command
     os.system(command)
 
