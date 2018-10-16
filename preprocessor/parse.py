@@ -64,7 +64,7 @@ def sha256(files):
   for file_path in sorted_files:
     file_data = open(file_path).read()
     if len(file_data) > 0:
-      hash.update(file_path)
+      hash.update(file_path.encode('utf-8'))
       hash.update(file_data)
   return hash.hexdigest()
 
