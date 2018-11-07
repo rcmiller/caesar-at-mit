@@ -111,7 +111,9 @@ $(document).ready(function() {
     </td>
     <td class="=grey-text">
     {% if milestone.max_extension > 0 %}
-      <a href="{% url 'request_extension' milestone.id %}"> Request extension</a>
+      <a href="{% url 'request_extension' milestone.id %}">
+        {% if extension %}Change{% else %}Request{% endif %} extension
+      </a>
     {% endif %}
     </td>
   </tr>

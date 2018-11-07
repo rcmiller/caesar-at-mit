@@ -874,13 +874,15 @@ def request_extension(request, milestone_id):
     else:
         cant_change_extensions_after = user_duedate
 
-    grace_period = datetime.timedelta(minutes=30)
+    # instead of using the current time, pretend that this interaction is actually happening N minutes ago,
+    # to allow for a grace period of N minutes
+    now_with_grace_period = datetime.datetime.now() - datetime.timedelta(minutes=15)
 
     # User is going to request an extension
     if request.method == 'GET':
         current_milestone = Milestone.objects.get(id=milestone_id)
         # Make sure user got here legally
-        if datetime.datetime.now() > cant_change_extensions_after + grace_period:
+        if now_with_grace_period > cant_change_extensions_after:
             return redirect('review.views.dashboard')
 
         current_extension = (user_duedate - current_milestone.duedate).days
@@ -888,12 +890,12 @@ def request_extension(request, milestone_id):
         if current_milestone.allow_unextending_to_past:
             # if enabled, extension can be decreased at any time 
             min_extension = 0
-        elif datetime.datetime.now() < current_milestone.duedate + grace_period:
+        elif now_with_grace_period < current_milestone.duedate:
             # initial deadline of the milestone hasn't happened yet, so extension can still be decreased 
             min_extension = 0
         else:
             # extension can be decreased to any day that hasn't passed yet 
-            min_extension = (datetime.datetime.now() - current_milestone.duedate + grace_period).days + 1
+            min_extension = (now_with_grace_period - current_milestone.duedate).days + 1
 
         max_extension = min(total_extension_days_left + current_extension, current_milestone.max_extension)
 
@@ -913,7 +915,7 @@ def request_extension(request, milestone_id):
         })
     else: # user just submitted an extension request
         # Make sure user got here legally
-        if datetime.datetime.now() > cant_change_extensions_after + grace_period:
+        if now_with_grace_period > cant_change_extensions_after:
             return redirect('review.views.dashboard')
 
         days = request.POST.get('dayselect', None)
