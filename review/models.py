@@ -3,7 +3,7 @@ from django.template.loader import get_template
 from django.contrib.contenttypes.models import ContentType
 from django.contrib.auth.models import User
 from django.db import models
-from django.db.models import Count
+from django.db.models import Count, CASCADE
 from django.db.models.signals import pre_save, post_save, pre_delete, post_delete
 from django.dispatch import receiver
 from django.conf import settings
@@ -41,7 +41,7 @@ class Subject(models.Model):
 
 class Semester(models.Model):
     id = models.AutoField(primary_key=True)
-    subject = models.ForeignKey(Subject, related_name='semesters')
+    subject = models.ForeignKey(Subject, on_delete=CASCADE, related_name='semesters')
 
     description = models.CharField(max_length=140, blank=True, \
         help_text='Subject Name. (ex.) Software Construction')
@@ -57,7 +57,7 @@ class Semester(models.Model):
 
 class Assignment(models.Model):
     id = models.AutoField(primary_key=True)
-    semester = models.ForeignKey(Semester, related_name='assignments', blank=False, null=True)
+    semester = models.ForeignKey(Semester, on_delete=CASCADE, related_name='assignments', blank=False, null=True)
     name = models.CharField(max_length=50)
 
     class Meta:
@@ -81,7 +81,7 @@ class Milestone(models.Model):
     )
 
     id = models.AutoField(primary_key=True)
-    assignment = models.ForeignKey(Assignment, related_name='milestones')
+    assignment = models.ForeignKey(Assignment, on_delete=CASCADE, related_name='milestones')
     assigned_date = models.DateTimeField(null=True, blank=True)
     duedate = models.DateTimeField(null=True, blank=True)
     name = models.CharField(max_length=50)
@@ -135,7 +135,7 @@ class ReviewMilestone(Milestone):
     # teacher_reviewers_per_chunk = models.IntegerField(default=1)
     
     min_student_lines = models.IntegerField(default=30)
-    submit_milestone = models.ForeignKey(SubmitMilestone, related_name='review_milestone')
+    submit_milestone = models.ForeignKey(SubmitMilestone, on_delete=CASCADE, related_name='review_milestone')
 
     # number of chunks to be assigned to students, alums, and staff in the class
     student_count = models.IntegerField(default=5)
@@ -172,8 +172,8 @@ class Submission(models.Model):
     created = models.DateTimeField(auto_now_add=True)
     revision = models.IntegerField(null=True, blank=True)
     revision_date = models.DateTimeField(null=True, blank=True)
-    milestone = models.ForeignKey(SubmitMilestone, related_name='submissions')
-    batch = models.ForeignKey(Batch, blank=True, null=True, related_name='submissions')
+    milestone = models.ForeignKey(SubmitMilestone, on_delete=CASCADE, related_name='submissions')
+    batch = models.ForeignKey(Batch, on_delete=CASCADE, blank=True, null=True, related_name='submissions')
     sha256 = models.CharField(max_length=64, null=True, blank=True) # SHA256 of all files in the submission 
 
     class Meta:
@@ -216,7 +216,7 @@ class File(models.Model):
     id = models.AutoField(primary_key=True)
     path = models.CharField(max_length=200)
     data = models.TextField()
-    submission = models.ForeignKey(Submission, related_name='files')
+    submission = models.ForeignKey(Submission, on_delete=CASCADE, related_name='files')
     created = models.DateTimeField(auto_now_add=True)
     def __split_lines(self):
         # first_line_offset = 0
@@ -251,7 +251,7 @@ class Chunk(models.Model):
         ('NONE', 'none'),
     )
     id = models.AutoField(primary_key=True)
-    file = models.ForeignKey(File, related_name='chunks')
+    file = models.ForeignKey(File, on_delete=CASCADE, related_name='chunks')
     name = models.CharField(max_length=200)
     start = models.IntegerField()
     end = models.IntegerField()
@@ -455,7 +455,7 @@ class Chunk(models.Model):
       return self.comments.count()
 
 class StaffMarker(models.Model):
-    chunk = models.ForeignKey(Chunk, related_name='staffmarkers')
+    chunk = models.ForeignKey(Chunk, on_delete=CASCADE, related_name='staffmarkers')
     start_line = models.IntegerField(blank=True, null=True)
     end_line = models.IntegerField(blank=True, null=True)
     class Meta:
@@ -498,11 +498,11 @@ class Task(models.Model):
         ('U', 'Unfinished'),
     )
     
-    submission = models.ForeignKey(Submission, related_name='tasks', null=True, blank=True)
-    chunk = models.ForeignKey(Chunk, related_name='tasks', null=True, blank=True)
-    chunk_review = models.ForeignKey(ChunkReview, related_name='tasks', null=True, blank=True)
-    reviewer = models.ForeignKey(User, related_name='tasks', null=True)
-    milestone = models.ForeignKey(ReviewMilestone, related_name='tasks')
+    submission = models.ForeignKey(Submission, on_delete=CASCADE, related_name='tasks', null=True, blank=True)
+    chunk = models.ForeignKey(Chunk, on_delete=CASCADE, related_name='tasks', null=True, blank=True)
+    chunk_review = models.ForeignKey(ChunkReview, on_delete=CASCADE, related_name='tasks', null=True, blank=True)
+    reviewer = models.ForeignKey(User, on_delete=CASCADE, related_name='tasks', null=True)
+    milestone = models.ForeignKey(ReviewMilestone, on_delete=CASCADE, related_name='tasks')
     status = models.CharField(max_length=1, choices=STATUS_CHOICES, default='N')
     # TODO switch to a more robust model history tracking (e.g. versioning)
     created = models.DateTimeField(auto_now_add=True)
@@ -552,15 +552,15 @@ class Comment(models.Model):
         ('T', 'Test result'),
     )
     text = models.TextField()
-    chunk = models.ForeignKey(Chunk, related_name='comments')
-    author = models.ForeignKey(User, related_name='comments')
+    chunk = models.ForeignKey(Chunk, on_delete=CASCADE, related_name='comments')
+    author = models.ForeignKey(User, on_delete=CASCADE, related_name='comments')
     start = models.IntegerField() # region start line, inclusive
     end = models.IntegerField() # region end line, exclusive
     type = models.CharField(max_length=1, choices=TYPE_CHOICES, default='U')
     created = models.DateTimeField(auto_now_add=True)
     modified = models.DateTimeField(auto_now=True)
     edited = models.DateTimeField(null=True, blank=True)
-    parent = models.ForeignKey('self', related_name='child_comments',
+    parent = models.ForeignKey('self', on_delete=CASCADE, related_name='child_comments',
         blank=True, null=True)
     # fields added for denormalization purposes
     upvote_count = models.IntegerField(default=0)
@@ -569,8 +569,8 @@ class Comment(models.Model):
     # to allow for retrieving comments in threaded order in one query
     thread_id = models.IntegerField(null=True)
     deleted = models.BooleanField(default=False)
-    batch = models.ForeignKey(Batch, blank=True, null=True, related_name='comments')
-    similar_comment = models.ForeignKey('self', related_name='similar_comments', blank=True, null=True)
+    batch = models.ForeignKey(Batch, on_delete=CASCADE, blank=True, null=True, related_name='comments')
+    similar_comment = models.ForeignKey('self', on_delete=CASCADE, related_name='similar_comments', blank=True, null=True)
 
     class Meta:
         db_table = 'comments'
@@ -619,8 +619,8 @@ class Vote(models.Model):
         (-1, '-1'),
     )
     value = models.SmallIntegerField(choices=VALUE_CHOICES)
-    comment = models.ForeignKey(Comment, related_name='votes')
-    author = models.ForeignKey(User, related_name='votes')
+    comment = models.ForeignKey(Comment, on_delete=CASCADE, related_name='votes')
+    author = models.ForeignKey(User, on_delete=CASCADE, related_name='votes')
     created = models.DateTimeField(auto_now_add=True)
     modified = models.DateTimeField(auto_now=True)
 
@@ -686,9 +686,9 @@ class Notification(models.Model):
             (COMMENT_ON_SUBMISSION, 'Received comment on submission'),
     )
 
-    submission = models.ForeignKey(Submission, blank=True, null=True, related_name='notifications')
-    comment = models.ForeignKey(Comment, blank=True, null=True, related_name='notifications')
-    recipient = models.ForeignKey(User, related_name='notifications')
+    submission = models.ForeignKey(Submission, on_delete=CASCADE, blank=True, null=True, related_name='notifications')
+    comment = models.ForeignKey(Comment, on_delete=CASCADE, blank=True, null=True, related_name='notifications')
+    recipient = models.ForeignKey(User, on_delete=CASCADE, related_name='notifications')
     reason = models.CharField(max_length=1, blank=True, choices=REASON_CHOICES)
     created = models.DateTimeField(auto_now_add=True)
     email_sent = models.BooleanField(default=False)
@@ -753,8 +753,8 @@ class Notification(models.Model):
 
 
 class Extension(models.Model):
-    user = models.ForeignKey(User, related_name='extensions')
-    milestone = models.ForeignKey(Milestone, related_name='extensions')
+    user = models.ForeignKey(User, on_delete=CASCADE, related_name='extensions')
+    milestone = models.ForeignKey(Milestone, on_delete=CASCADE, related_name='extensions')
     slack_used = models.IntegerField(default=0, blank=True, null=True)
 
     class Meta:
@@ -782,8 +782,8 @@ class Member(models.Model):
 
     role = models.CharField(max_length=1, choices=ROLE_CHOICES)
     slack_budget = models.IntegerField(default=5, blank=False, null=False)
-    user = models.ForeignKey(User, related_name='membership')
-    semester = models.ForeignKey(Semester, related_name='members')
+    user = models.ForeignKey(User, on_delete=CASCADE, related_name='membership')
+    semester = models.ForeignKey(Semester, on_delete=CASCADE, related_name='members')
 
     class Meta:
         db_table = 'members'
