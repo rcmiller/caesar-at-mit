@@ -463,7 +463,7 @@ class StaffMarker(models.Model):
 
 
 class ChunkReview(models.Model):
-    chunk = models.OneToOneField(Chunk, related_name='chunk_review', null=True, blank=True)
+    chunk = models.OneToOneField(Chunk, on_delete=CASCADE, related_name='chunk_review', null=True, blank=True)
     id = models.AutoField(primary_key=True)
     # student_reviewers = models.IntegerField(default=0)
     # alum_reviewers = models.IntegerField(default=0)
@@ -801,7 +801,7 @@ class Member(models.Model):
         return self.role == Member.VOLUNTEER
 
 class UserProfile(models.Model):
-    user = models.OneToOneField(User, related_name='profile')
+    user = models.OneToOneField(User, on_delete=CASCADE, related_name='profile')
     reputation = models.IntegerField(default=0, editable=True)
 
     class Meta:
