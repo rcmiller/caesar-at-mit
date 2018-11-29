@@ -9,6 +9,7 @@ from django.dispatch import receiver
 from django.conf import settings
 from django.core.exceptions import PermissionDenied
 from django_tools.middlewares import ThreadLocal
+from django.urls import reverse
 
 from email_templates import send_templated_mail
 import app_settings
@@ -180,10 +181,6 @@ class Submission(models.Model):
         db_table = u'submissions'
     def __unicode__(self):
         return '%s, for %s' % (self.name, self.milestone)
-
-    @models.permalink
-    def get_absolute_url(self):
-        return ('review.views.view_all_chunks', [str(self.milestone.assignment.name), str(self.name), "code"])
 
     def has_author(self, user):
         return self.authors.filter(pk=user.pk).exists()
@@ -397,9 +394,9 @@ class Chunk(models.Model):
                 .exclude(id=self.id)[:limit]
         return chunks
 
-    @models.permalink
+    #@models.permalink
     def get_absolute_url(self):
-        return ('view_chunk', [str(self.id)])
+        return reverse('view_chunk', args=[str(self.id)])
 
     def __unicode__(self):
         return u'%s - %s' % (self.name,self.id)
