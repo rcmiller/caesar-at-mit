@@ -574,32 +574,6 @@ def cancel_assignment(request):
     return render(request, 'manage.html', {
     })
 
-
-def login(request):
-    if request.method == 'GET':
-        redirect_to = request.GET.get('next', '/')
-        return render(request, 'login.html', {
-            'form': AuthenticationForm(),
-            'next': redirect_to
-        })
-    else:
-        form = AuthenticationForm(request, request.POST)
-        if form.is_valid():
-            login(request, form.get_user())
-            return HttpResponseRedirect(redirect_to)
-
-        redirect_to = request.POST.get('next', '/')
-        username = request.POST['username']
-        password = request.POST['password']
-        user = authenticate(username=username, password=password)
-        if user is not None:
-            if user.is_active:
-                auth.login(request, user)
-                return HttpResponseRedirect(redirect_to)
-        return render(request, 'login.html', {
-            'form': form,
-            'next': redirect_to
-        })
 def invalid_registration(request):
     invalid_invitation = "Sorry, this invitation has expired. "
     return render(request, 'invalidreg.html', {

@@ -27,10 +27,8 @@ urlpatterns = [
     url(r'^unvote/', review.views.unvote, name='unvote'),
     url(r'activity/(?P<review_milestone_id>\d+)/(?P<username>\w+)', review.views.all_activity, name='all_activity'),
     url(r'^search/', review.views.search, name='search'),
-    url(r'login/', django.contrib.auth.views.login, {
-        'template_name': 'login.html',
-    }, name='login'),
-    url(r'logout/', django.contrib.auth.views.logout, name='logout'),
+    url(r'login/', django.contrib.auth.views.LoginView.as_view(template_name='login.html'), name='login'),
+    url(r'logout/', django.contrib.auth.views.LogoutView.as_view(), name='logout'),
     url(r'register/(?P<email>.+alum\.mit\.edu)/(?P<code>[0-9A-Fa-f]+$)', review.views.register, name='register'),
     url(r'reputation_adj/', review.views.reputation_adjustment, name='reputation_adjustment'),
     url(r'register/', review.views.invalid_registration, name='invalid_registration'),
