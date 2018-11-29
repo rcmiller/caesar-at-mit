@@ -1,7 +1,7 @@
 from re import match
 from django.core.mail import EmailMultiAlternatives
 from hashlib import md5
-from django.core.urlresolvers import reverse
+from django.urls import reverse
 from urllib import quote_plus, unquote_plus
 from django.contrib.auth.models import User
 from django.conf import settings
