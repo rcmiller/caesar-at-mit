@@ -46,7 +46,7 @@ INSTALLED_APPS = [
     'review'
 ]
 
-MIDDLEWARE_CLASSES = [
+MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
     'django.middleware.common.CommonMiddleware',
@@ -145,7 +145,6 @@ STATIC_ROOT = project_path('apache/collectedstatic')
 ADMIN_MEDIA_PREFIX = STATIC_URL + 'admin/'
 
 
-
 # debug_toolbar setup
 
 def show_debug_toolbar(request):
@@ -153,9 +152,8 @@ def show_debug_toolbar(request):
 
 DEBUG_TOOLBAR_CONFIG = {
     'SHOW_TOOLBAR_CALLBACK': show_debug_toolbar,
-    'INTERCEPT_REDIRECTS': False,
-    'SHOW_TEMPLATE_CONTEXT': False,
 }
+
 
 
 
@@ -213,7 +211,7 @@ TEMPLATES = [
                 'django.template.context_processors.request',
                 'django.contrib.auth.context_processors.auth',
                 'django.contrib.messages.context_processors.messages',
-                'django.core.context_processors.static',
+                'django.template.context_processors.static',
                 'review.context_processors.template_constants',
             ],
         },
