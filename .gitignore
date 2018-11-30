@@ -9,3 +9,4 @@ settings_local.py
 collectedstatic
 apache/ssl
 local-testing
+*.log

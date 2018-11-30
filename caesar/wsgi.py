@@ -19,8 +19,8 @@ os.environ.setdefault("DJANGO_SETTINGS_MODULE", "caesar.settings")
 
 # turn on warnings when upgrading Django, to look for deprecated features
 # when you uncomment the part below, the warnings will appear in /var/log/apache2/error.log
-# import warnings
-# warnings.simplefilter('always')
-# warnings.warn('this is a test warning')
+import warnings
+warnings.simplefilter('always')
+warnings.warn('this is a test warning')
 
 application = get_wsgi_application()
