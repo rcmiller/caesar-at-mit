@@ -1,6 +1,7 @@
 from django.contrib import admin
 from django.contrib.auth.models import User
 from django.contrib.auth.admin import UserAdmin
+from django.utils.safestring import mark_safe
 from review.models import *
 import datetime
 
@@ -63,8 +64,7 @@ class MilestoneAdmin(admin.ModelAdmin):
         for num_days in range(1, obj.max_extension+1):
             num_extensions = Extension.objects.filter(milestone=obj).filter(slack_used=num_days).count()
             extensions += ' / ' + str(num_extensions)
-        return '<a href="%s%s">%s</a>' % ('/all_extensions/', obj.id, extensions)
-    extension_data.allow_tags = True
+        return mark_safe('<a href="%s%s">%s</a>' % ('/all_extensions/', obj.id, extensions))
     extension_data.short_description = 'Extensions (0 Days / 1 Day / 2 Days / ...)'
 
 class ReviewMilestoneAdmin(MilestoneAdmin):
@@ -74,12 +74,10 @@ class ReviewMilestoneAdmin(MilestoneAdmin):
         return super(ReviewMilestoneAdmin, self).formfield_for_foreignkey(db_field, request, **kwargs)
     list_display = ('id', '__str__', 'extension_data', 'routing_link', 'list_users_link',)
     def routing_link(self, obj):
-        return '<a href="%s%s">%s</a>' % ('/simulate/', obj.id, 'Configure Routing')
-    routing_link.allow_tags = True
+        return mark_safe('<a href="%s%s">%s</a>' % ('/simulate/', obj.id, 'Configure Routing'))
     routing_link.short_description = 'Configure Routing'
     def list_users_link(self, obj):
-        return '<a href="%s%s">%s</a>' % ('/list_users/', obj.id, 'List Users')
-    list_users_link.allow_tags = True
+        return mark_safe('<a href="%s%s">%s</a>' % ('/list_users/', obj.id, 'List Users'))
     list_users_link.short_description = 'List Users'
     exclude = ('type',)
 admin.site.register(ReviewMilestone, ReviewMilestoneAdmin)

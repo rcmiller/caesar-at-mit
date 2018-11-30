@@ -836,7 +836,7 @@ def all_extensions(request, milestone_id):
     current_milestone = Milestone.objects.get(id=milestone_id)
     students = User.objects.filter(membership__role=Member.STUDENT, membership__semester=current_milestone.assignment.semester).order_by('username')
     students_with_no_slack = students.exclude(extensions__milestone=current_milestone)
-    extensions = Extension.objects.filter(milestone=current_milestone).order_by('user__username').select_related('user__username')
+    extensions = Extension.objects.filter(milestone=current_milestone).order_by('user__username')
 
     # the index of a list of students in student_slack is the number of slack days requested by the students in the list
     student_slack = ["".join([str(student)+"\\n" for student in students_with_no_slack])]
