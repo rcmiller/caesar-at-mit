@@ -773,7 +773,7 @@ def request_extension(request, milestone_id):
         current_milestone = Milestone.objects.get(id=milestone_id)
         # Make sure user got here legally
         if now_with_grace_period > cant_change_extensions_after:
-            return redirect('review.views.dashboard')
+            return redirect('dashboard')
 
         current_extension = (user_duedate - current_milestone.duedate).days
 
@@ -789,7 +789,7 @@ def request_extension(request, milestone_id):
 
         max_extension = min(total_extension_days_left + current_extension, current_milestone.max_extension)
 
-        possible_extensions = range(min_extension, max_extension+1)
+        possible_extensions = list(range(min_extension, max_extension+1))
 
         written_dates = []
         for day in range(max([current_extension]+possible_extensions)+1):
@@ -806,7 +806,7 @@ def request_extension(request, milestone_id):
     else: # user just submitted an extension request
         # Make sure user got here legally
         if now_with_grace_period > cant_change_extensions_after:
-            return redirect('review.views.dashboard')
+            return redirect('dashboard')
 
         days = request.POST.get('dayselect', None)
         try:
@@ -815,16 +815,16 @@ def request_extension(request, milestone_id):
 
             extension_days = int(days) if days != None else current_extension
             if extension_days > total_extension_days or extension_days < 0 or extension_days > current_milestone.max_extension:
-                return redirect('review.views.dashboard')
+                return redirect('dashboard')
             extension,created = Extension.objects.get_or_create(user=user, milestone=current_milestone)
             if extension_days == 0: # Don't keep extensions with 0 slack days
                 extension.delete()
             else:
                 extension.slack_used = extension_days
                 extension.save()
-            return redirect('review.views.dashboard')
+            return redirect('dashboard')
         except ValueError:
-            return redirect('review.views.dashboard')
+            return redirect('dashboard')
 
 @staff_member_required
 def manage(request):
