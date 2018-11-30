@@ -32,7 +32,6 @@ from collections import defaultdict, OrderedDict
 from review.models import *
 from review.forms import *
 from review.old_routing import assign_tasks, simulate_tasks
-from limit_registration import check_email, send_email, verify_token
 
 
 @login_required
