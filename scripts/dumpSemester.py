@@ -34,7 +34,7 @@ parser.add_argument('--semester',
 
 
 args = parser.parse_args()
-#print args
+#print(args)
 
 import gc
 

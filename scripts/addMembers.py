@@ -28,7 +28,7 @@ def loadusers(filename, role, semester, extension_days):
 
 # create a single user
 def makeuser(username, role, semester, extension_days):
-    print username
+    print(username)
     user, user_created  = User.objects.get_or_create(username=username, is_active=True)
     if user_created:
         fetch_user_data_from_LDAP(user)
@@ -55,7 +55,7 @@ def fetch_user_data_from_LDAP(user, ):
     fields = ['cn', 'sn', 'givenName', 'mail', ]
     userfilter = ldap.filter.filter_format('uid=%s', [username])
     result = con.search_s('dc=mit,dc=edu', ldap.SCOPE_SUBTREE, userfilter, fields)
-    print result
+    print(result)
     if len(result) == 1:
         data = result[0][1]
         if 'givenName' in data:
@@ -68,7 +68,7 @@ def fetch_user_data_from_LDAP(user, ):
         user.profile.company = 'MIT'
         user.profile.save()
     else:
-        raise ValueError, ("Could not find user with username '%s' (filter '%s')"%(username, userfilter))
+        raise ValueError("Could not find user with username '%s' (filter '%s')"%(username, userfilter))
     return user
 
 #gets a list of all student emails, outputs to 'student_emails.txt'
@@ -83,7 +83,7 @@ def student_email(semester):
 def students(semester):
     students = Member.objects.filter(role=Member.STUDENT, semester=semester).membership
     for s in students:
-      print s.user.username
+      print(s.user.username)
     
 
 parser = argparse.ArgumentParser(description="""
@@ -121,7 +121,7 @@ parser.add_argument('usernames',
 
 
 args = parser.parse_args()
-#print args
+#print(args)
 
 subject = Subject.objects.get(name=args.subject[0])
 semester = Semester.objects.get(subject=subject, semester=args.semester[0])

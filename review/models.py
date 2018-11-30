@@ -11,8 +11,7 @@ from django.core.exceptions import PermissionDenied
 from django_tools.middlewares import ThreadLocal
 from django.urls import reverse
 
-from email_templates import send_templated_mail
-import app_settings
+import review.app_settings
 
 import datetime
 import sys

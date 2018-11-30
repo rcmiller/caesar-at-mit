@@ -38,7 +38,7 @@ parser.add_argument('usernames',
 
 
 args = parser.parse_args()
-#print args
+#print(args)
 
 milestone = get_milestone(args)
 print "taking snapshots of code for milestone", str(milestone)
@@ -97,7 +97,7 @@ def git_snapshot(repo, revision, target_path, snapshot_even_if_already_exists=Fa
         command = 'curl -s -L -u "{accessToken}" "http://github.mit.edu/api/v3/repos/{ownerAndRepo}/tarball/{revision}"  | tar xz -C "{target_path}" --strip-components 1'.format(accessToken=settings.GITHUB_TOKEN, ownerAndRepo=ownerAndRepo, revision=revision, target_path=target_path)
     else:
         command = 'git --git-dir="{repo}" archive "{revision}" | tar x -C "{target_path}"'.format(repo=repo, revision=revision, target_path=target_path)
-    print command
+    print(command)
     os.system(command)
 
 
@@ -115,7 +115,7 @@ if args.project:
             groups = groups.intersection(restrict_to_usernames)
         if 'didit' in groups:
             groups.remove('didit')
-        #print groups
+        #print(groups)
 
         code_path = os.path.join(ROOT, subject_name, 'private', semester_abbr, 'code', pset)
         milestone_path = os.path.join(code_path, milestone_name)
@@ -198,7 +198,7 @@ else:
                     revisions_by_username[username] = force_revision_for_username[username]
                     continue
                 if not Member.objects.filter(semester=semester, user__username=username, role=Member.STUDENT).exists():
-                    print username, "found in sweep but not a student, ignoring"
+                    print(username, "found in sweep but not a student, ignoring")
                     continue
                 try:
                     extension = Extension.objects.get(user__username=username, milestone=milestone)
@@ -271,7 +271,7 @@ else:
         for username in revision_map.keys():
             revision = revision_map[username]
             snapshot_name = username + "-" + revision
-            #print snapshot_name
+            #print(snapshot_name)
             
             # old repo: user_repo = os.path.join(repos_path, username + '.git')
             user_repo = repos_url + '-' + username

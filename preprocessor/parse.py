@@ -117,7 +117,7 @@ def parse_student_files(usernames, files, batch, submit_milestone, save, student
       submission.authors.add(user)
     submission.save()
 
-  print submission
+  print(submission)
 
   file_objects = []
   chunk_objects = []
@@ -178,7 +178,7 @@ def parse_student_files(usernames, files, batch, submit_milestone, save, student
       
     chunk.student_lines = num_student_lines
     if num_student_lines > 0:
-      print str(chunk) + ": " + str(num_student_lines) + " new student lines"
+      print(str(chunk) + ": " + str(num_student_lines) + " new student lines")
     if save:
       chunk.save()
     

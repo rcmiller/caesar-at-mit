@@ -47,7 +47,7 @@ parser.add_argument('usernames',
                     nargs='*',
                     help="Athena usernames of students to load; if omitted, uses all the students in the latest sweep for the milestone. Usernames can end with :revision suffix, used by takeSnapshots but ignored here.")
 args = parser.parse_args()
-#print args
+#print(args)
 
 # Find the submit milestone object
 milestone = get_milestone(args)
@@ -77,7 +77,7 @@ settings = {
     'suppress_regex': make_regex_list(milestone.suppress_checkstyle_regex),
     'restrict_to_usernames': set([re.sub(':.*$', '', u) for u in args.usernames])
     }
-# print settings
+# print(settings)
 
 starting_time = time.time()
 
@@ -85,7 +85,7 @@ staff_code = {}
 if settings['staff_dir'] is not None:
   print "Crawling staff code in", settings['staff_dir']
   staff_code = parse_staff_code(settings['staff_dir'], settings['include'], settings['exclude'])
-#print staff_code.keys()
+#print(staff_code.keys())
 
 batch = Batch(name=milestone.full_name())
 if settings['save_data']:

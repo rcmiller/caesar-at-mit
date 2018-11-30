@@ -35,12 +35,12 @@ class SSLRemoteUserBackend(RemoteUserBackend):
             try:
                 user.groups.add(auth.models.Group.objects.get(name='MIT'))
             except ObjectDoesNotExist:
-                print "Failed to retrieve mit group"
+                print("Failed to retrieve mit group")
         else:
-            raise ValueError, ("Could not find user with username '%s' (filter '%s')"%(username, userfilter))
+            raise ValueError("Could not find user with username '%s' (filter '%s')"%(username, userfilter))
         try:
             user.groups.add(auth.models.Group.objects.get(name='autocreated'))
         except ObjectDoesNotExist:
-            print "Failed to retrieve autocreated group"
+            print("Failed to retrieve autocreated group")
         user.save()
         return user

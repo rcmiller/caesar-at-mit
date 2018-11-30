@@ -2,9 +2,8 @@ Django==1.11
 django-debug-toolbar
 django-extensions
 Pygments
-django-email-templates
 python-ldap
-MySQL-python
+mysqlclient
 django-tools
 unicodecsv
 

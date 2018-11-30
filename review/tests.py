@@ -26,10 +26,10 @@ class RoutingTests(TestCase):
     # reviewer = review_milestone.assignment.semester.members[0]
     # chunks_already_assigned = [task.chunk for task in reviewer.tasks.filter(review_milestone=review_milestone)]
     # chunks_assigned = assign_tasks(review_milestone, reviewer)
-    # print review_milestone
-    # print reviewer
-    # print chunks_already_assigned
-    # print chunks_assigned     
+    # print(review_milestone)
+    # print(reviewer)
+    # print(chunks_already_assigned)
+    # print(chunks_assigned)
 
     # def test_tasks_pass(self):
     #     """
@@ -37,7 +37,7 @@ class RoutingTests(TestCase):
     #     """
     #     # self.assertFalse(Task.objects.all().count() == 28)
     #     print 'chunks:'
-    #     print Chunk.objects.all()
+    #     print(Chunk.objects.all())
     #     c = Chunk.objects.get(id=69000)
     #     print 'name: ' + str(c.name)
     #     print 'changing name to hello...'

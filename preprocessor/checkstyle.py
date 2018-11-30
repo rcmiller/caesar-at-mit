@@ -15,7 +15,7 @@ def generate_checkstyle_comments(code_objects, save, batch, suppress_comment_reg
 
   for (submission, files, chunks) in code_objects:
     chunkMap = dict([(chunk.file.path, chunk) for chunk in chunks if chunk.student_lines > 0])
-    print "%s: %s changed chunks for this submission." % (submission, len(chunkMap))
+    print("%s: %s changed chunks for this submission." % (submission, len(chunkMap)))
 
     if len(chunkMap) == 0:
       continue
@@ -33,7 +33,7 @@ def generate_checkstyle_comments(code_objects, save, batch, suppress_comment_reg
     try:
       dom = parseString(xml)
     except:
-      print sys.exc_info()[0]
+      print(sys.exc_info()[0])
       continue
 
     for fileNode in dom.getElementsByTagName('file'):
@@ -53,4 +53,4 @@ def generate_checkstyle_comments(code_objects, save, batch, suppress_comment_reg
           end=line)
         if save:
           comment.save()
-      print "checkstyle: on", chunk.name, 'I made', len(commentNodes), 'comments'
+      print("checkstyle: on", chunk.name, 'I made', len(commentNodes), 'comments')

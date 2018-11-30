@@ -29,7 +29,7 @@ parser.add_argument('-n', '--dry-run',
 
 
 args = parser.parse_args()
-#print args
+#print(args)
 
 tasks = Task.objects.filter(milestone__id=args.milestone).exclude(status='C').exclude(status="U")
 print "Preparing to close out " + str(len(tasks)) + " uncompleted tasks"

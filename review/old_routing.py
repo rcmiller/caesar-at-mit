@@ -9,10 +9,10 @@ from django.contrib.auth.models import User
 from django.db.models.query import prefetch_related_objects
 
 from review.models import Task, Member, Chunk
+import review.app_settings
 
 import random
 import sys
-import app_settings
 import logging
 
 __all__ = ['assign_tasks']
@@ -293,7 +293,7 @@ def num_tasks_for_user(review_milestone, user):
     else:
       return 0
 
-def _generate_tasks(review_milestone, reviewer, chunk_map,  chunk_id_task_map=defaultdict(list), max_tasks=sys.maxint, assign_more=False):
+def _generate_tasks(review_milestone, reviewer, chunk_map,  chunk_id_task_map=defaultdict(list), max_tasks=sys.maxsize, assign_more=False):
     """
     Returns a list of tasks that should be assigned to the given reviewer.
     assignment: assignment that tasks should be generated for
@@ -331,7 +331,7 @@ def _generate_tasks(review_milestone, reviewer, chunk_map,  chunk_id_task_map=de
 
     return tasks
 
-def assign_tasks(review_milestone, reviewer, tasks_to_assign=sys.maxint, assign_more=False):
+def assign_tasks(review_milestone, reviewer, tasks_to_assign=sys.maxsize, assign_more=False):
   user_map = load_members(review_milestone.assignment.semester)
   chunks = load_chunks(review_milestone.submit_milestone, user_map, reviewer)
   chunk_map = {}

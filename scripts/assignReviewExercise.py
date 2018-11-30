@@ -38,7 +38,7 @@ parser.add_argument('--all-staff',
 
 
 args = parser.parse_args()
-print args
+print(args)
 
 try:
   submission = Submission.objects.get(pk=args.submission)
@@ -87,6 +87,6 @@ for student in students:
     if not args.dry_run:
       task.save()
 
-print tasksCreated, " tasks created"
+print(tasksCreated, "tasks created")
 if not args.dry_run:
-  print "and saved to database"
+  print("and saved to database")

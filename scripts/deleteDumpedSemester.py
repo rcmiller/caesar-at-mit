@@ -63,7 +63,7 @@ for jsonFile in args.jsonFile:
 
   assert len(primaryKeys) == len(models)
 
-  print str(len(primaryKeys)) + " objects in file"
+  print(str(len(primaryKeys)), "objects in file")
 
   objectsOfModel = defaultdict(list)
   for (primaryKey, modelName) in reversed(zip(primaryKeys, models)):
@@ -75,12 +75,12 @@ for jsonFile in args.jsonFile:
     modelClass = MODEL_TO_CLASS[modelName]
     if modelClass != None:
       primaryKeys = objectsOfModel[modelName]
-      print "deleting " + str(len(primaryKeys)) + " objects from " + modelName
+      print("deleting", str(len(primaryKeys)), "objects from", modelName)
       objectsToDelete = modelClass.objects.filter(id__in=primaryKeys)
-      print "   found " + str(objectsToDelete.count()) + " matching objects in the database"
+      print("   found", str(objectsToDelete.count()), "matching objects in the database")
       if args.dry_run:
-        print "   (dry run, didn't delete)"
+        print("   (dry run, didn't delete)")
       else:
-        print "   deleting...",
+        print("   deleting...")
         objectsToDelete._raw_delete(objectsToDelete.db);
-        print "done"
+        print("done")
