@@ -28,30 +28,3 @@
 	    }
 	});
 })();
-
-$(document).ready(function() {
-	var toggle_button = function(data, b) {
-		var status, text;
-
-		if (b.hasClass('btn-danger')) {
-			text = 'Volunteer';
-			$(b).data('enrolled','False');
-		} else {
-			text = 'Stop volunteering';
-			$(b).data('enrolled','True');
-		}
-
-		b.toggleClass('btn-info')
-			.toggleClass('btn-danger')
-			.text(text);
-	};
-
-	var toggle_class_status = function() {
-		var id = $(this).data('semester'),
-			status = $(this).data('enrolled'),
-			div = $(this);
-		$.post(caesar.urls.edit_membership, {semester_id: id, enrolled: status}, function(data) { toggle_button(data, div); });
-	};
-
-	$('.btn.volunteer').click(toggle_class_status);
-});

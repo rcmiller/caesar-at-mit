@@ -29,7 +29,6 @@ urlpatterns = [
     url(r'^search/', review.views.search, name='search'),
     url(r'login/', django.contrib.auth.views.LoginView.as_view(template_name='login.html'), name='login'),
     url(r'logout/', django.contrib.auth.views.LogoutView.as_view(), name='logout'),
-    url(r'register/(?P<email>.+alum\.mit\.edu)/(?P<code>[0-9A-Fa-f]+$)', review.views.register, name='register'),
     url(r'reputation_adj/', review.views.reputation_adjustment, name='reputation_adjustment'),
     url(r'bulk_add/', review.views.bulk_add, name='bulk_add'),
     url(r'^user/(?P<username>\w+)', review.views.view_profile, name='view_profile'),
