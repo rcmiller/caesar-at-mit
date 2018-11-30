@@ -1,6 +1,8 @@
 <script type="text/javascript">
 
 $(document).ready(function() {
+  registerCommentEditingHandlers();
+  
   {% if COMMENT_SEARCH %}
     var comment_type;
     {% if reply %}
@@ -40,7 +42,7 @@ $(document).ready(function() {
       {{ form.text }}
       {{ form.comment_id }}
       {{ form.similar_comment }}
-      <button type="submit">Save</button>
+      <button id="save-button">Save</button>
       <button id="cancel-button" type="button">Cancel</button>
     </form>
   </div>
@@ -55,7 +57,7 @@ $(document).ready(function() {
       {{ form.text }}
       {{ form.comment_id }}
       {{ form.similar_comment }}
-      <button type="submit">Save</button>
+      <button id="save-button">Save</button>
       <button id="cancel-reply-button" type="button">Cancel</button>
     </form>
   </div>

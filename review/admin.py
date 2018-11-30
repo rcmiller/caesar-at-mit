@@ -41,7 +41,7 @@ class AssignmentAdmin(admin.ModelAdmin):
 admin.site.register(Assignment, AssignmentAdmin)
 
 class SubmissionAdmin(admin.ModelAdmin):
-    list_display = ('id', '__unicode__')
+    list_display = ('id', '__str__')
     search_fields = ('authors__username',)
 admin.site.register(Submission, SubmissionAdmin)
 
@@ -72,7 +72,7 @@ class ReviewMilestoneAdmin(MilestoneAdmin):
         if db_field.name == "submit_milestone":
             kwargs["queryset"] = SubmitMilestone.objects.order_by('-assignment__semester', 'assignment__name', 'name')
         return super(ReviewMilestoneAdmin, self).formfield_for_foreignkey(db_field, request, **kwargs)
-    list_display = ('id', '__unicode__', 'extension_data', 'routing_link', 'list_users_link',)
+    list_display = ('id', '__str__', 'extension_data', 'routing_link', 'list_users_link',)
     def routing_link(self, obj):
         return '<a href="%s%s">%s</a>' % ('/simulate/', obj.id, 'Configure Routing')
     routing_link.allow_tags = True
@@ -85,7 +85,7 @@ class ReviewMilestoneAdmin(MilestoneAdmin):
 admin.site.register(ReviewMilestone, ReviewMilestoneAdmin)
 
 class SubmitMilestoneAdmin(MilestoneAdmin):
-    list_display = ('id', '__unicode__', 'extension_data',)
+    list_display = ('id', '__str__', 'extension_data',)
     exclude = ('type',)
 admin.site.register(SubmitMilestone, SubmitMilestoneAdmin)
 

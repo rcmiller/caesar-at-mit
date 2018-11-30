@@ -34,7 +34,7 @@ class Subject(models.Model):
     name = models.CharField(blank=False, null=False, max_length=32)
 
     class Meta:
-        db_table = u'subjects'
+        db_table = 'subjects'
 
     def __str__(self):
       return self.name
@@ -50,7 +50,7 @@ class Semester(models.Model):
     is_current_semester = models.BooleanField(default=False, verbose_name='Is in progress')
 
     class Meta:
-        db_table = u'semesters'
+        db_table = 'semesters'
 
     def __str__(self):
       return '%s - %s' % (self.subject, self.semester)
@@ -61,9 +61,9 @@ class Assignment(models.Model):
     name = models.CharField(max_length=50)
 
     class Meta:
-        db_table = u'assignments'
+        db_table = 'assignments'
 
-    def __unicode__(self):
+    def __str__(self):
         return '%s, %s' % (self.name, self.semester)
 
     def is_current_semester(self):
@@ -92,17 +92,17 @@ class Milestone(models.Model):
     type = models.CharField(max_length=1, choices=TYPE_CHOICES)
 
     class Meta:
-        db_table = u'milestones'
+        db_table = 'milestones'
 
     def full_name(self):
         return '%s - %s' % (self.assignment.name, self.name)
 
-    def __unicode__(self):
+    def __str__(self):
         return '%s - %s - (%s)' % (self.assignment, self.name, self.get_type_display())
 
 class SubmitMilestone(Milestone):
     class Meta:
-        db_table = u'submitmilestones'
+        db_table = 'submitmilestones'
     starting_code_path = models.CharField(max_length=300, blank=True, default="", 
                 help_text="Folder containing starting code for the assignment.  Should contain one subfolder, usually called staff/, under which is the starting code.")
     submitted_code_path = models.CharField(max_length=300, blank=True, default="",
@@ -145,7 +145,7 @@ class ReviewMilestone(Milestone):
     reveal_date = models.DateTimeField(null=True, blank=True, help_text="When comments are revealed to code author. If blank, comments are always visible to author.")
 
     class Meta:
-        db_table = u'reviewmilestones'
+        db_table = 'reviewmilestones'
 
 @receiver(post_save, sender=ReviewMilestone)
 def set_review_type(sender, instance, created, **kwargs):
@@ -157,7 +157,7 @@ class Batch(models.Model):
     name = models.CharField(max_length=50)
 
     class Meta:
-      db_table = u'batches'
+      db_table = 'batches'
       verbose_name_plural = 'batches'
 
     def __str__(self):
@@ -177,8 +177,8 @@ class Submission(models.Model):
     sha256 = models.CharField(max_length=64, null=True, blank=True) # SHA256 of all files in the submission 
 
     class Meta:
-        db_table = u'submissions'
-    def __unicode__(self):
+        db_table = 'submissions'
+    def __str__(self):
         return '%s, for %s' % (self.name, self.milestone)
 
     def has_author(self, user):
@@ -229,9 +229,9 @@ class File(models.Model):
         super(File, self).__init__(*args, **kwargs)
         self.__split_lines()
     class Meta:
-        db_table = u'files'
+        db_table = 'files'
         unique_together = (('path', 'submission'))
-    def __unicode__(self):
+    def __str__(self):
         return '%s - %s' % (self.path, self.submission)
 
 
@@ -264,7 +264,7 @@ class Chunk(models.Model):
 
     objects = ChunkManager()
     class Meta:
-        db_table = u'chunks'
+        db_table = 'chunks'
 
     @property
     def data(self):
@@ -320,7 +320,7 @@ class Chunk(models.Model):
         # TODO: make tab expansion configurable
         # TODO: more robust (custom) dedenting code
         data = file_data[first_line_offset:self.end].expandtabs(4)
-        #data = str(usr.__unicode__())
+        #data = str(usr.__str__())
         self._data = textwrap.dedent(data)
         self._lines = list(enumerate(self.data.splitlines(), start=first_line))
 
@@ -383,7 +383,7 @@ class Chunk(models.Model):
         self.start_line = max(0, start_line)
         self.end_line = max(self.start_line, end_line)+1
         snippet_lines = self.lines[self.start_line:self.end_line + 1]
-        print("snippet_lines", snippet_lines, self.start_line, self.end_line, file=sys.stderr)
+        #print("snippet_lines", snippet_lines, self.start_line, self.end_line, file=sys.stderr)
         if len(snippet_lines)==0:
             return ''
         return ' '.join(list(zip(*snippet_lines))[1])
@@ -400,8 +400,8 @@ class Chunk(models.Model):
     def get_absolute_url(self):
         return reverse('view_chunk', args=[str(self.id)])
 
-    def __unicode__(self):
-        return u'%s - %s' % (self.name,self.id)
+    def __str__(self):
+        return '%s - %s' % (self.name,self.id)
 
     # # this is never called
     # def sorted_reviewers(self):    
@@ -458,7 +458,7 @@ class StaffMarker(models.Model):
     start_line = models.IntegerField(blank=True, null=True)
     end_line = models.IntegerField(blank=True, null=True)
     class Meta:
-        db_table = u'staffmarkers'
+        db_table = 'staffmarkers'
 
 
 class ChunkReview(models.Model):
@@ -486,8 +486,8 @@ class ChunkReview(models.Model):
     # def reviewer_ids(self):
     #     return list(map(int,self.reviewer_ids.split()))
 
-    def __unicode__(self):
-        return u'chunk_review - %s' % (self.id)
+    def __str__(self):
+        return 'chunk_review - %s' % (self.id)
 
 class Task(models.Model):
     STATUS_CHOICES=(
@@ -519,7 +519,7 @@ class Task(models.Model):
         db_table = 'tasks'
         unique_together = ('chunk', 'reviewer',)
 
-    def __unicode__(self):
+    def __str__(self):
         return "Task: %s - %s" % (self.reviewer, self.chunk)
 
     def mark_as(self, status):
@@ -575,7 +575,7 @@ class Comment(models.Model):
         db_table = 'comments'
         ordering = [ 'start', '-end', 'thread_id', 'created' ]
 
-    def __unicode__(self):
+    def __str__(self):
         return self.text
 
     def save(self, *args, **kwargs):
@@ -629,8 +629,8 @@ class Vote(models.Model):
         db_table = 'votes'
         unique_together = ('comment', 'author',)
 
-    def __unicode__(self):
-        return u'Vote(value=%s, comment=%s)' % (self.value, self.comment)
+    def __str__(self):
+        return 'Vote(value=%s, comment=%s)' % (self.value, self.comment)
 
 
 
@@ -806,8 +806,8 @@ class UserProfile(models.Model):
     class Meta:
         db_table = 'userprofiles'
 
-    def __unicode__(self):
-        return self.user.__unicode__()
+    def __str__(self):
+        return self.user.__str__()
 
     def name(self):
       if self.user.first_name and self.user.last_name:

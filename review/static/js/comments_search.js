@@ -56,7 +56,7 @@ function logUsage(data) {
 // Clear similarCommentsDB database !important
 function clearDatabase(chunk_id) {
   var db;
-  if ($.browser.mozilla) {
+  if (window['indexedDB']) {
     indexedDB.deleteDatabase("similarCommentsDB-"+chunk_id);
   }
   else {
@@ -487,7 +487,7 @@ var commentSearch = new function() {
           var $bubble = $("#bubble-"+commentsData[results[i].index].comment_id);
           if ($bubble.length == 0) {
             $.ajax({
-              url: "/chunks/highlight_comment_chunk_line/"+commentsData[results[i].index].comment_id,
+              url: "/highlight_comment_chunk_line/"+commentsData[results[i].index].comment_id,
               success: function(response) {
                 var comment_div = $("#similar-comment-"+response.comment_id);
                 comment_div.data(response);

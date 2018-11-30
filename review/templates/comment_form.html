@@ -3,6 +3,8 @@
 <script type="text/javascript">
 
 $(document).ready(function() {
+  registerCommentEditingHandlers();
+
   {% if COMMENT_SEARCH %}
     var comment_type = "comment";
     try {
@@ -35,7 +37,7 @@ $(document).ready(function() {
       {{ form.end }}
       {{ form.chunk }}
       {{ form.similar_comment }}
-      <button type="submit">Save</button>
+      <button id="save-button">Save</button>
       <button id="cancel-button" type="button">Cancel</button>
     </form>
   </div>

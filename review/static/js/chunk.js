@@ -569,6 +569,85 @@ function getText($textentry) {
   return content;
 }
 
+
+function registerCommentEditingHandlers() {
+
+    // Save content to hidden textarea. CRITICAL so that form is saved.
+    function saveTextToForm() {
+        var content = getText($("#textentry"));
+        $("#hidden-textarea").val(content);
+    }
+
+    console.log("registering event handlers");
+    $('#new-comment-form #save-button').on('click', function() {
+        console.log("running submit handler");
+        saveTextToForm();
+        var dataString = $('#new-comment-form').serialize();
+        $.post(caesar.urls.new_comment, dataString, function(data) {
+            var newNode = $(data);
+            $('.new-comment').replaceWith(newNode);
+            model.addCommentFromDOM(newNode.get(0));
+            newNode.effect('highlight', {}, 2000);
+            resetScroll();
+            clearSelection();
+        });
+        return false;
+    });
+
+    $('#edit-comment-form #save-button').on('click', function() {
+        saveTextToForm();
+        var dataString = $('#edit-comment-form').serialize();
+        $.post(caesar.urls.edit_comment, dataString, function(data) {
+            var newNode = $(data);
+            $('.new-comment').replaceWith(newNode);
+            $('.new-reply').replaceWith(newNode);
+            //remove the one that's hiding
+            var idSplit = newNode.get(0).id.split('-');
+            var comment_id = parseInt(idSplit[1]);
+            $.each(model.comments, function(index, comment) {
+                if (comment != undefined && comment.id == comment_id){
+                    model.removeComment(comment);
+                }
+            });
+            model.addCommentFromDOM(newNode.get(0));
+            newNode.effect('highlight', {}, 2000);
+            resetScroll();
+            clearSelection();
+        });
+        return false;
+    });
+
+    $('#reply-comment-form #save-button').on('click', function() {
+        saveTextToForm();
+        var dataString = $('#reply-comment-form').serialize();
+        $.post(caesar.urls.reply, dataString, function(data) {
+            var newNode = $(data);
+            $('.new-reply').replaceWith(newNode);
+            model.addCommentFromDOM(newNode.get(0));
+            newNode.effect('highlight', {}, 2000);
+            resetScroll();
+            clearSelection();
+        });
+        return false;
+    });
+
+    $('#cancel-button').on('click', function() {
+        resetScroll();
+        clearSelection();
+        $.each(model.comments, function(index, comment) {
+            $(comment.elt).show();
+        });
+    });
+
+    $('#cancel-reply-button').on('click', function() {
+        resetScroll();
+        $('.reply-form').parent().remove();
+        $.each(model.comments, function(index, comment) {
+            $(comment.elt).show();
+        });
+    });
+}
+
 $(document).ready(function() {
 
     $('.comment').each(function() { 
@@ -616,79 +695,6 @@ $(document).ready(function() {
             }
         });
     }
-
-    // Save content to hidden textarea. CRITICAL so that form is saved.
-    function saveTextToForm() {
-        var content = getText($("#textentry"));
-        $("#hidden-textarea").val(content);
-    }
-
-    $('#new-comment-form').live('submit', function() {
-        saveTextToForm();
-        var dataString = $(this).serialize();
-        $.post(caesar.urls.new_comment, dataString, function(data) {
-            var newNode = $(data);
-            $('.new-comment').replaceWith(newNode);
-            model.addCommentFromDOM(newNode.get(0));
-            newNode.effect('highlight', {}, 2000);
-            resetScroll();
-            clearSelection();
-        });
-        return false;
-    });
-
-    $('#edit-comment-form').live('submit', function() {
-        saveTextToForm();
-        var dataString = $(this).serialize();
-        $.post(caesar.urls.edit_comment, dataString, function(data) {
-            var newNode = $(data);
-            $('.new-comment').replaceWith(newNode);
-            $('.new-reply').replaceWith(newNode);
-            //remove the one that's hiding
-            var idSplit = newNode.get(0).id.split('-');
-            var comment_id = parseInt(idSplit[1]);
-            $.each(model.comments, function(index, comment) {
-                if (comment != undefined && comment.id == comment_id){
-                    model.removeComment(comment);
-                }
-            });
-            model.addCommentFromDOM(newNode.get(0));
-            newNode.effect('highlight', {}, 2000);
-            resetScroll();
-            clearSelection();
-        });
-        return false;
-    });
-
-    $('#reply-comment-form').live('submit', function() {
-        saveTextToForm();
-        var dataString = $(this).serialize();
-        $.post(caesar.urls.reply, dataString, function(data) {
-            var newNode = $(data);
-            $('.new-reply').replaceWith(newNode);
-            model.addCommentFromDOM(newNode.get(0));
-            newNode.effect('highlight', {}, 2000);
-            resetScroll();
-            clearSelection();
-        });
-        return false;
-    });
-
-    $('#cancel-button').live('click', function() {
-        resetScroll();
-        clearSelection();
-        $.each(model.comments, function(index, comment) {
-            $(comment.elt).show();
-        });
-    });
-
-    $('#cancel-reply-button').live('click', function() {
-        resetScroll();
-        $('.reply-form').parent().remove();
-        $.each(model.comments, function(index, comment) {
-            $(comment.elt).show();
-        });
-    });
 
     var toggleCommentsText = {
         collapse: 'Collapse all comments', 
