@@ -66,7 +66,7 @@ for jsonFile in args.jsonFile:
   print(str(len(primaryKeys)), "objects in file")
 
   objectsOfModel = defaultdict(list)
-  for (primaryKey, modelName) in reversed(zip(primaryKeys, models)):
+  for (primaryKey, modelName) in reversed(list(zip(primaryKeys, models))):
     objectsOfModel[modelName].append(primaryKey)
 
   uniqueModels = reduce(lambda uniq, model: uniq + [model] if len(uniq)==0 or uniq[-1] != model else uniq, models, [])

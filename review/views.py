@@ -431,12 +431,12 @@ def all_activity(request, review_milestone_id, username):
         lexer = get_lexer_for_filename(chunk.file.path)
         participant_votes = dict((vote.comment.id, vote.value) \
                 for vote in participant.votes.filter(comment__chunk=chunk.id))
-        numbers, lines = zip(*chunk.lines)
+        numbers, lines = list(zip(*chunk.lines))
 
         staff_lines = StaffMarker.objects.filter(chunk=chunk).order_by('start_line', 'end_line')
 
-        highlighted = zip(numbers,
-                highlight(chunk.data, lexer, formatter).splitlines())
+        highlighted = list(zip(numbers,
+                highlight(chunk.data, lexer, formatter).splitlines()))
 
         highlighted_lines = []
         staff_line_index = 0
@@ -460,7 +460,7 @@ def all_activity(request, review_milestone_id, username):
                 highlighted_comments.append(comment)
             else:
                 highlighted_comments.append(None)
-        comment_data = zip(comments, highlighted_comments, highlighted_votes)
+        comment_data = list(zip(comments, highlighted_comments, highlighted_votes))
         review_milestone_data.append((chunk, highlighted_lines, comment_data, chunk.file))
 
     return render(request, 'all_activity.html', {
@@ -869,11 +869,11 @@ def highlight_chunk_lines(staff_lines, chunk, start=None, end=None):
     lexer = get_best_lexer(chunk.file.path)
     formatter = HtmlFormatter(cssclass='syntax', nowrap=True)
 
-    [numbers, lines] = zip(*chunk.lines[start:end])
+    [numbers, lines] = list(zip(*chunk.lines[start:end]))
     # highlight the code this way to correctly identify multi-line constructs
     # TODO implement a custom formatter to do this instead
-    highlighted = zip(numbers,
-            highlight(chunk.data, lexer, formatter).splitlines()[start:end])
+    highlighted = list(zip(numbers,
+            highlight(chunk.data, lexer, formatter).splitlines()[start:end]))
     highlighted_lines = []
     staff_line_index = 0
     for number, line in highlighted:
@@ -1064,9 +1064,9 @@ def view_all_chunks(request, viewtype, submission_id, embedded=False):
         lexer = get_best_lexer(afile.path)
         #prepare the file - get the lines that are part of chunk and the ones that aren't
         highlighted_lines_for_file = []
-        numbers, lines = zip(*afile.lines)
-        highlighted = zip(numbers,
-                highlight(afile.data, lexer, formatter).splitlines())
+        numbers, lines = list(zip(*afile.lines))
+        highlighted = list(zip(numbers,
+                highlight(afile.data, lexer, formatter).splitlines()))
 
         highlighted_lines = []
         staff_line_index = 0
@@ -1088,7 +1088,7 @@ def view_all_chunks(request, viewtype, submission_id, embedded=False):
         for chunk in chunks:
             if len(chunk.lines)==0:
                 continue
-            numbers, lines = zip(*chunk.lines)
+            numbers, lines = list(zip(*chunk.lines))
             chunk_start = numbers[0]
             chunk_end = chunk_start + len(numbers)
             if end != chunk_start and chunk_start > end: #some lines between chunks
@@ -1132,7 +1132,7 @@ def view_all_chunks(request, viewtype, submission_id, embedded=False):
         code_only = True
         comment_view = False
 
-    path_and_stats = zip(paths, user_stats, static_stats)
+    path_and_stats = list(zip(paths, user_stats, static_stats))
 
     return render(request, 'view_all_chunks.html', {
         'milestone_name': milestone_name,

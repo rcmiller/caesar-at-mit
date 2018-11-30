@@ -381,9 +381,12 @@ class Chunk(models.Model):
         #     snippet_length += len(self.lines[start_line][1].strip()) + 1
         #     start_line -= 1
         self.start_line = max(0, start_line)
-        self.end_line = end_line+1
+        self.end_line = max(self.start_line, end_line)+1
         snippet_lines = self.lines[self.start_line:self.end_line + 1]
-        return ' '.join(zip(*snippet_lines)[1])
+        print("snippet_lines", snippet_lines, self.start_line, self.end_line, file=sys.stderr)
+        if len(snippet_lines)==0:
+            return ''
+        return ' '.join(list(zip(*snippet_lines))[1])
 
     def get_similar_chunks(self):
         if not self.cluster_id:
@@ -520,7 +523,7 @@ class Task(models.Model):
         return "Task: %s - %s" % (self.reviewer, self.chunk)
 
     def mark_as(self, status):
-        if status not in zip(*Task.STATUS_CHOICES)[0]:
+        if status not in list(zip(*Task.STATUS_CHOICES)[0]):
             raise Exception('Invalid task status')
 
         self.status = status
