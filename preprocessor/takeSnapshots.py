@@ -101,6 +101,11 @@ def git_snapshot(repo, revision, target_path, snapshot_even_if_already_exists=Fa
     os.system(command)
 
 
+# equivalent to ln -sf target source
+def symlink_force(target, source):
+    os.remove(source) if os.path.lexists(source) else None
+    os.symlink(target, source)
+
 # for Github API, use
 #  https://octokit.github.io/rest.js/#api-Repos-getArchiveLink
 # https://github.mit.edu/6031-fa18
@@ -108,31 +113,75 @@ def git_snapshot(repo, revision, target_path, snapshot_even_if_already_exists=Fa
 # student code in https://github.mit.edu/6031-fa18/ps0-username
 
 if args.project:
-    def snapshot_projects():
-        repos_path = os.path.join(ROOT, subject_name, 'git', semester_abbr, 'projects', pset)
-        groups = set([os.path.splitext(filename)[0] for filename in os.listdir(repos_path)])
-        if len(restrict_to_usernames) > 0:
-            groups = groups.intersection(restrict_to_usernames)
-        if 'didit' in groups:
-            groups.remove('didit')
-        #print(groups)
 
-        code_path = os.path.join(ROOT, subject_name, 'private', semester_abbr, 'code', pset)
-        milestone_path = os.path.join(code_path, milestone_name)
+    # new Didit: milestone is stored as a CSV file in private/<semester>/code/<project>/<project>-<milestone>.csv
+    milestone_filename = os.path.join(ROOT, subject_name, 'private', semester_abbr, 'code', pset, pset + "-" + milestone_name + '.csv')
+    revision_map = {}
+    with open(milestone_filename, 'r') as f:
+        reader = csv.reader(f)
+        next(reader) # skip header row
+        revision_map = {}
+        for row in reader:
+            group_usernames = row[0]
+            revision = re.sub(r'^="(.*)"$', r'\1', row[1]) # remove ="..." around the revision hash
+            if len(restrict_to_usernames) == 0 or group_usernames in restrict_to_usernames:
+                revision_map[group_usernames] = revision
+    pprint(revision_map)
 
-        # make parent folders in case they don't exist yet
-        if not os.path.isdir(milestone_name):
-            os.makedirs(milestone_name)
+    # new repo locations are in github.mit.edu
+    repos_url = 'https://github.mit.edu/' + subject_name.replace('.', '') + '-' + semester_abbr + '/' + pset
+    #print 'repos_url', repos_url
 
-        # snapshot the starting code in case it hasn't been done yet
-        git_snapshot(os.path.join(repos_path, 'didit/starting.git'), 'HEAD', os.path.join(code_path, 'starting/staff'))
+    # snapshots of code will be stored under code_path folder
+    code_path = os.path.join(ROOT, subject_name, 'private', semester_abbr, 'code', pset)
+    snapshots_path = os.path.join(code_path, "snapshots")
+    milestone_path = os.path.join(code_path, milestone_name)
 
-        for group in groups:
-            group_repo = os.path.join(repos_path, group + '.git')
-            group_snapshot = os.path.join(milestone_path, group)
-            git_snapshot(group_repo, 'HEAD', group_snapshot, True)
+    # make parent folders in case they don't exist yet
+    [os.makedirs(path) for path in (snapshots_path, milestone_path) if not os.path.isdir(path)]
 
-    snapshot_projects()
+    # snapshot the starting code in case it hasn't been done yet
+    # old repo: starting_repo_path = os.path.join(repos_path, 'didit/starting.git')
+    starting_repo_path = repos_url
+    git_snapshot(starting_repo_path, 'HEAD', os.path.join(code_path, 'starting/staff'))
+
+    for username in revision_map.keys():
+        revision = revision_map[username]
+        snapshot_name = username + "-" + revision
+        #print(snapshot_name)
+        
+        # old repo: user_repo = os.path.join(repos_path, username + '.git')
+        user_repo = repos_url + '-' + username
+        user_snapshot = os.path.join(code_path, "snapshots", snapshot_name)
+        git_snapshot(user_repo, revision, user_snapshot)
+        symlink_force(os.path.join('../snapshots', snapshot_name), os.path.join(milestone_path, username))
+
+    # old Didit
+    # def snapshot_projects():
+    #     repos_path = os.path.join(ROOT, subject_name, 'git', semester_abbr, 'projects', pset)
+    #     groups = set([os.path.splitext(filename)[0] for filename in os.listdir(repos_path)])
+    #     if len(restrict_to_usernames) > 0:
+    #         groups = groups.intersection(restrict_to_usernames)
+    #     if 'didit' in groups:
+    #         groups.remove('didit')
+    #     #print(groups)
+
+    #     code_path = os.path.join(ROOT, subject_name, 'private', semester_abbr, 'code', pset)
+    #     milestone_path = os.path.join(code_path, milestone_name)
+
+    #     # make parent folders in case they don't exist yet
+    #     if not os.path.isdir(milestone_name):
+    #         os.makedirs(milestone_name)
+
+    #     # snapshot the starting code in case it hasn't been done yet
+    #     git_snapshot(os.path.join(repos_path, 'didit/starting.git'), 'HEAD', os.path.join(code_path, 'starting/staff'))
+
+    #     for group in groups:
+    #         group_repo = os.path.join(repos_path, group + '.git')
+    #         group_snapshot = os.path.join(milestone_path, group)
+    #         git_snapshot(group_repo, 'HEAD', group_snapshot, True)
+
+    # snapshot_projects()
 
 
 else:
@@ -228,7 +277,7 @@ else:
         #   - additional columns which are ignored by this script
         with open(milestone_filename, 'r') as f:
             reader = csv.reader(f)
-            reader.next() # skip header row
+            next(reader) # skip header row
             revision_map = {}
             for row in reader:
                 username = row[0]
@@ -238,11 +287,6 @@ else:
 
     print("selected revisions for", len(revision_map), "users")
     pprint(revision_map)
-
-    # equivalent to ln -sf target source
-    def symlink_force(target, source):
-        os.remove(source) if os.path.lexists(source) else None
-        os.symlink(target, source)
 
     # revision_map: RevisionMap
     # extracts a snapshot of each user's revision from their git repo (if that snapshot doesn't already exist),
