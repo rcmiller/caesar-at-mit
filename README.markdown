@@ -1,7 +1,8 @@
 Requirements
 ============
-* Ubuntu or Debian
-* Python 2.7 with `pip` available
+* Ubuntu
+* Django 2
+* Python 3 with `pip` available
 * Apache 2.4 with `mod_wsgi` and `mod_ssl`
 
 All of the configuration files expect the project code to live at 
@@ -171,6 +172,38 @@ Finally, if you are starting a new database, the database needs some setup:
 Finally browse to your web server and try to log in.
 
 
+SSL Support
+==============
+
+Set up SSL access by obtaining certificates for your server hostname. For CSAIL, the instructions are here:
+
+    https://tig.csail.mit.edu/web-services/server-certificates/
+
+Create an `ssl/` subfolder inside `/var/django/caesar/apache`, and make it readable only by the `ubuntu` user.
+
+Put these files in it:
+
+    mitCAclient.pem
+    caesar.eecs.mit.edu-full-chain.crt
+    caesar.eecs.mit.edu.key
+    caesar.eecs.mit.edu.crt
+
+The `CA` file is MIT's certificate authority certificate.
+
+The `.key` file is the private key file that you created when you ran `openssl`.
+It should start with a line `BEGIN RSA PRIVATE KEY` and end with a line `END RSA PRIVATE KEY`.
+
+The `.crt` file is the "X509 Certificate only, Base64 encoded" version of the certificate you got back from the certificate-request process.
+It should have a single certificate block in it, bounded by `BEGIN CERTIFICATE` and `END CERTIFICATE` lines.
+
+The `full-chain.crt` file is the "X509 Intermediates/root only, Base64 encoded" link you got back from the process.
+It should have multiple certificate blocks in it, each bounded by `BEGIN CERTIFICATE` and `END CERTIFICATE` lines.
+
+Edit the `/var/django/caesar/apache/caesar.conf` file so that `ServerName` is the fully-qualified hostname in your certificates, and so that the paths in the `SSL...File` settings point correctly to the files above. 
+
+Restart Apache with `sudo apachectl graceful`.
+
+
 Unicode Support for MySql
 ==========================
 
@@ -194,3 +227,4 @@ To fix the tables:
 
     alter table files convert to character set utf8mb4;
     alter table comments convert to character set utf8mb4;
+
