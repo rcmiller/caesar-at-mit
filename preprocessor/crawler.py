@@ -37,13 +37,13 @@ def crawl_submissions(base_dir, includes, excludes):
         unexpected_files.append(filename)
 
   if len(unexpected_files) > 0:
-    print >>sys.stderr, """
+    print("""
 unexpected files found:
     {unexpected_files}
 
 To include these files in Caesar, update the included file patterns of the SubmitMilestone
 and rerun the preprocessor.  The second run of the preprocessor will not reload all submissions,
 only the ones that changed as a result of the updated file pattern.
-""".format(unexpected_files="\n    ".join(unexpected_files))
+    """.format(unexpected_files="\n    ".join(unexpected_files)), file=sys.stderr)
 
   return student_code

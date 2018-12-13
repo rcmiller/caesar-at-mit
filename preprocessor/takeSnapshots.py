@@ -1,4 +1,4 @@
-#!/usr/bin/env python2.7
+#!/usr/bin/env python3
 import sys, os, argparse, django, re, datetime, itertools, json, csv
 from pprint import pprint
 
@@ -41,7 +41,7 @@ args = parser.parse_args()
 #print(args)
 
 milestone = get_milestone(args)
-print "taking snapshots of code for milestone", str(milestone)
+print("taking snapshots of code for milestone", str(milestone))
 
 semester = milestone.assignment.semester
 semester_name = semester.semester
@@ -78,7 +78,7 @@ else:
 
 pset = milestone.assignment.name # e.g. "ps0"
 milestone_name = milestone.name # e.g. "beta"
-print "updating snapshots for milestone", milestone.full_name()
+print("updating snapshots for milestone", milestone.full_name())
 
 
 
@@ -212,7 +212,7 @@ else:
 
         # get the RevisionMap for each deadline
         sweeps = find_sweeps(milestone.duedate, milestone.max_extension)
-        print "found sweeps for", [i for i in range(0,len(sweeps)) if sweeps[i]], "days late"
+        print("found sweeps for", [i for i in range(0,len(sweeps)) if sweeps[i]], "days late")
         #pprint(sweeps)
         # now sweep[n] is the RevisionMap for n days late (which may be None, if haven't done the n-day sweep yet)
         revision_map = select_revisions(sweeps)
@@ -236,7 +236,7 @@ else:
                 if len(restrict_to_usernames) == 0 or username in restrict_to_usernames:
                     revision_map[username] = revision
 
-    print "selected revisions for", len(revision_map), "users"
+    print("selected revisions for", len(revision_map), "users")
     pprint(revision_map)
 
     # equivalent to ln -sf target source

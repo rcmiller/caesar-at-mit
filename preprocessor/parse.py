@@ -82,7 +82,7 @@ def parse_student_files(usernames, files, batch, submit_milestone, save, student
   if users.count() != len(set(usernames)):
     missing_users = set(usernames).difference([user.username for user in users])
     for username in missing_users:
-      print "user %s doesn't exist in the database." % username
+      print("user %s doesn't exist in the database." % username)
     failed_users |= missing_users
     return None
 
@@ -95,15 +95,15 @@ def parse_student_files(usernames, files, batch, submit_milestone, save, student
     
     # if prior submission has same hash, don't replace it
     if prior_submission.sha256 == submission_hash:
-      print "submission for %s unchanged" % submission_name
+      print("submission for %s unchanged" % submission_name)
       return None
 
     # if it already has human comments, don't replace the submission them
     if Comment.objects.filter(chunk__file__submission=prior_submission).exclude(author__username='checkstyle').exists():
-      print "submission for %s already exists and has human comments, so skipping it" % submission_name
+      print("submission for %s already exists and has human comments, so skipping it" % submission_name)
       return None
 
-    print "replacing prior submission for %s" % submission_name
+    print("replacing prior submission for %s" % submission_name)
     if save:
       prior_submission.delete()
   except Submission.DoesNotExist:

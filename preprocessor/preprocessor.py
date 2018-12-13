@@ -1,4 +1,4 @@
-#!/usr/bin/env python2.7
+#!/usr/bin/env python3
 import sys, os, argparse, django, re
 
 # set up Django
@@ -51,7 +51,7 @@ args = parser.parse_args()
 
 # Find the submit milestone object
 milestone = get_milestone(args)
-print "loading code for milestone", str(milestone)
+print("loading code for milestone", str(milestone))
 
 def resolve(folder):
   if folder == None or folder == "":
@@ -83,28 +83,28 @@ starting_time = time.time()
 
 staff_code = {}
 if settings['staff_dir'] is not None:
-  print "Crawling staff code in", settings['staff_dir']
+  print("Crawling staff code in", settings['staff_dir'])
   staff_code = parse_staff_code(settings['staff_dir'], settings['include'], settings['exclude'])
 #print(staff_code.keys())
 
 batch = Batch(name=milestone.full_name())
 if settings['save_data']:
   batch.save()
-  print "Batch ID: %s" % (batch.id)
+  print("Batch ID: %s" % (batch.id))
 
 # Crawling the file system.
-print "Crawling student code in", settings['student_submission_dir']
+print("Crawling student code in", settings['student_submission_dir'])
 student_code = crawl_submissions(settings['student_submission_dir'], settings['include'], settings['exclude'])
 
 code_objects = parse_all_files(student_code, settings['student_submission_dir'], batch, milestone, settings['save_data'], staff_code, settings['restrict'], settings['restrict_to_usernames'])
 
 if parse.failed_users:
-  print "To add the missing users to Caesar, use scripts/addMembers.py to add the following list of users:"
-  print ','.join(parse.failed_users)
-  print "Then rerun the preprocessor."
+  print("To add the missing users to Caesar, use scripts/addMembers.py to add the following list of users:")
+  print(','.join(parse.failed_users))
+  print("Then rerun the preprocessor.")
 
-print "Loaded %s submissions." % (len(code_objects))
+print("Loaded %s submissions." % (len(code_objects)))
 
 if settings['generate_comments']:
-  print "Generating checkstyle comments..."
+  print("Generating checkstyle comments...")
   generate_checkstyle_comments(code_objects, settings['save_data'], batch, settings['suppress_regex'])
