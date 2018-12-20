@@ -27,7 +27,7 @@ def generate_checkstyle_comments(code_objects, save, batch, suppress_comment_reg
       '-jar', checkstyle_settings['jar'],
       '-c', checkstyle_settings['settings'],
       '-f', 'xml'
-      ] + chunkMap.keys()
+      ] + list(chunkMap.keys())
     proc = Popen(commandLine, stdout=PIPE)
     xml = proc.communicate()[0]
     try:

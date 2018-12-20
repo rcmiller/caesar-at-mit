@@ -50,7 +50,7 @@ def parse_all_files(student_code, student_base_dir, batch, submit_milestone, sav
                          staff_code,
                          restricted,
                          restrict_to_usernames)
-    for (rootFolderName, files) in student_code.iteritems()]
+    for (rootFolderName, files) in student_code.items()]
   return [code_object for code_object in code_objects if code_object != None]
 
 def sha256(files):
@@ -65,7 +65,7 @@ def sha256(files):
     file_data = open(file_path).read()
     if len(file_data) > 0:
       hash.update(file_path.encode('utf-8'))
-      hash.update(file_data)
+      hash.update(file_data.encode('utf-8'))
   return hash.hexdigest()
 
 def parse_student_files(usernames, files, batch, submit_milestone, save, student_base_dir, staff_code, restricted, restrict_to_usernames):

@@ -1,5 +1,6 @@
 import os, fnmatch, sys
 from collections import defaultdict
+from functools import reduce
 
 def crawl_submissions(base_dir, includes, excludes):
   '''Crawls the students code and returns a dictionary mapping student usernames to

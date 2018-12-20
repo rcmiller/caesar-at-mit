@@ -100,7 +100,7 @@ code_objects = parse_all_files(student_code, settings['student_submission_dir'],
 
 if parse.failed_users:
   print("To add the missing users to Caesar, use scripts/addMembers.py to add the following list of users:")
-  print(','.join(parse.failed_users))
+  print(' '.join(parse.failed_users))
   print("Then rerun the preprocessor.")
 
 print("Loaded %s submissions." % (len(code_objects)))
