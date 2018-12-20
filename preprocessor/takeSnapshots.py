@@ -29,12 +29,12 @@ parser.add_argument('--milestone',
                     metavar="ID",
                     type=int,
                     help="id number of SubmitMilestone; if omitted, uses the latest milestone whose deadline has passed.")
-parser.add_argument('--project',
-                    action='store_true',
-                    help="this milestone is a group project, not an individual problem set")
+parser.add_argument('-n', '--dry-run',
+                    action="store_true",
+                    help="just do a test run -- snapshot the code into the filesystem, but don't save anything into the Caesar database")
 parser.add_argument('usernames',
                     nargs='*',
-                    help="Athena usernames of students to load (with optional ':revision' appended to each with the commit that should be used for that student); if omitted, uses all the students in the latest sweep for the milestone.")
+                    help="Athena usernames of students (or dash-separated usernames, for project groups) to load (with optional ':revision' appended to each with the commit that should be used for that student); if omitted, uses all the students in the latest sweep for the milestone.")
 
 
 args = parser.parse_args()
@@ -81,7 +81,6 @@ milestone_name = milestone.name # e.g. "beta"
 print("updating snapshots for milestone", milestone.full_name())
 
 
-
 # take a snapshot from a git repo:string of revision:string and store it at target_path:string 
 # if repo is a folder path, uses git archive
 # if repo is a url of the form "https://github.mit.edu/owner/repo URL", uses Github API 
@@ -93,6 +92,7 @@ def git_snapshot(repo, revision, target_path, snapshot_even_if_already_exists=Fa
         os.makedirs(target_path)
     m = re.match(r'^https://github\.mit\.edu/(.*)$', repo)
     if m:
+        # see docs at https://octokit.github.io/rest.js/#api-Repos-getArchiveLink
         ownerAndRepo = m.group(1)
         command = 'curl -s -L -u "{accessToken}" "http://github.mit.edu/api/v3/repos/{ownerAndRepo}/tarball/{revision}"  | tar xz -C "{target_path}" --strip-components 1'.format(accessToken=settings.GITHUB_TOKEN, ownerAndRepo=ownerAndRepo, revision=revision, target_path=target_path)
     else:
@@ -106,29 +106,39 @@ def symlink_force(target, source):
     os.remove(source) if os.path.lexists(source) else None
     os.symlink(target, source)
 
-# for Github API, use
-#  https://octokit.github.io/rest.js/#api-Repos-getArchiveLink
-# https://github.mit.edu/6031-fa18
-# starting code in https://github.mit.edu/6031-fa18/ps0
-# student code in https://github.mit.edu/6031-fa18/ps0-username
 
-if args.project:
+# in the code below,
+# RevisionMap is a dictionary mapping
+#   username:string -> revision:string, a revision hash in username's git repo for this pset
 
-    # new Didit: milestone is stored as a CSV file in private/<semester>/code/<project>/<project>-<milestone>.csv
+# return RevisionMap found in Didit milestone file
+def load_revisions():
+    # milestone is stored as a CSV file in private/<semester>/code/<pset>/<pset>-<milestone>.csv
     milestone_filename = os.path.join(ROOT, subject_name, 'private', semester_abbr, 'code', pset, pset + "-" + milestone_name + '.csv')
-    revision_map = {}
+
+    # milestone CSV file format:
+    #   - has a header row
+    #   - first column is username, e.g. rcm
+    #   - second column is ="revision", e.g. ="e232523"
+    #   - additional columns which are ignored by this script
     with open(milestone_filename, 'r') as f:
         reader = csv.reader(f)
         next(reader) # skip header row
         revision_map = {}
         for row in reader:
-            group_usernames = row[0]
+            username = row[0]
             revision = re.sub(r'^="(.*)"$', r'\1', row[1]) # remove ="..." around the revision hash
-            if len(restrict_to_usernames) == 0 or group_usernames in restrict_to_usernames:
-                revision_map[group_usernames] = revision
-    pprint(revision_map)
+            if len(restrict_to_usernames) == 0 or username in restrict_to_usernames:
+                revision_map[username] = revision
+    return revision_map
 
-    # new repo locations are in github.mit.edu
+# revision_map: RevisionMap
+# extracts a snapshot of each user's revision from their git repo (if that snapshot doesn't already exist),
+# and makes a symlink to it in the right place 
+def snapshot_revisions(revision_map):
+    # starting code in (e.g.) https://github.mit.edu/6031-fa18/ps0
+    # student code in (e.g.) https://github.mit.edu/6031-fa18/ps0-username
+
     repos_url = 'https://github.mit.edu/' + subject_name.replace('.', '') + '-' + semester_abbr + '/' + pset
     #print 'repos_url', repos_url
 
@@ -141,7 +151,6 @@ if args.project:
     [os.makedirs(path) for path in (snapshots_path, milestone_path) if not os.path.isdir(path)]
 
     # snapshot the starting code in case it hasn't been done yet
-    # old repo: starting_repo_path = os.path.join(repos_path, 'didit/starting.git')
     starting_repo_path = repos_url
     git_snapshot(starting_repo_path, 'HEAD', os.path.join(code_path, 'starting/staff'))
 
@@ -156,171 +165,7 @@ if args.project:
         git_snapshot(user_repo, revision, user_snapshot)
         symlink_force(os.path.join('../snapshots', snapshot_name), os.path.join(milestone_path, username))
 
-    # old Didit
-    # def snapshot_projects():
-    #     repos_path = os.path.join(ROOT, subject_name, 'git', semester_abbr, 'projects', pset)
-    #     groups = set([os.path.splitext(filename)[0] for filename in os.listdir(repos_path)])
-    #     if len(restrict_to_usernames) > 0:
-    #         groups = groups.intersection(restrict_to_usernames)
-    #     if 'didit' in groups:
-    #         groups.remove('didit')
-    #     #print(groups)
-
-    #     code_path = os.path.join(ROOT, subject_name, 'private', semester_abbr, 'code', pset)
-    #     milestone_path = os.path.join(code_path, milestone_name)
-
-    #     # make parent folders in case they don't exist yet
-    #     if not os.path.isdir(milestone_name):
-    #         os.makedirs(milestone_name)
-
-    #     # snapshot the starting code in case it hasn't been done yet
-    #     git_snapshot(os.path.join(repos_path, 'didit/starting.git'), 'HEAD', os.path.join(code_path, 'starting/staff'))
-
-    #     for group in groups:
-    #         group_repo = os.path.join(repos_path, group + '.git')
-    #         group_snapshot = os.path.join(milestone_path, group)
-    #         git_snapshot(group_repo, 'HEAD', group_snapshot, True)
-
-    # snapshot_projects()
-
-
-else:
-    # determine the correct revision to snapshot for each username
-
-    # in the code below,
-    # RevisionMap is a dictionary mapping
-    #   username:string -> revision:string, a revision hash in username's git repo for this pset
-
-    old_sweeps_path = os.path.join(ROOT, subject_name, 'didit', semester_abbr, 'sweeps/psets', pset)
-    if os.path.exists(old_sweeps_path):
-
-        # deadline: datetime, max_extension: int, number of days of slack allowed on this deadline
-        # returns list of RevisionMaps of length max_extension+1, 
-        #    where sweeps[i] is the i-days-late RevisionMap, or None if no sweep found for that day
-        def find_sweeps(deadline, max_extension):
-            # old Didit: sweeps were stored in JSON files in didit/<semester>/sweeps/psets/<pset>/<yymmddThhmmss>/sweep.json
-            sweep_filenames = os.listdir(old_sweeps_path)
-
-            # sweep file for new didit will be
-            #  [header row]
-            #  dash-separated-usernames,sha,... (possibly additional columns)
-
-            # filename:string, sweeps folder name, assumed to have the form yymmddThhmmss, e.g. '20170122T221500';
-            # returns int, number of days after deadline
-            def days_after_deadline(filename):
-                return (datetime.datetime.strptime(filename, '%Y%m%dT%H%M%S') - deadline).days
-
-            # choose the first sweep in each 1-day window
-            # make sure we look at them in increasing chron order, since os.listdir() makes no order guarantee
-            sweep_filenames.sort()
-            sweep_filename_for_days_late = [None] * (max_extension + 1)
-            for days_late, group in itertools.groupby(sweep_filenames, days_after_deadline):
-                if days_late >= 0 and days_late <= max_extension:
-                    sweep_filename_for_days_late[days_late] = list(group)[0]
-
-            # filename: string, sweeps foldername under sweeps_path
-            # returns RevisionMap of that sweep
-            def load_json_sweep(filename):
-                with open(os.path.join(sweeps_path, filename, 'sweep.json'), 'r') as f:
-                    data = json.load(f)
-                    sweep = {}
-                    for entry in data['reporevs']:
-                        for user in entry['users']:
-                            sweep[user] = entry['rev']
-                    return sweep
-            return [load_json_sweep(filename) if filename else None for filename in sweep_filename_for_days_late]
-
-
-        # sweeps: list of max_extension+1 RevisionMaps, where sweeps[n] is the RevisionMap for n-days-late
-        # returns a new RevisionMap for every registered student whose deadline has passed, selecting the n-days-late revision
-        #     for that student if the student requested n days of slack
-        def select_revisions(sweeps):
-            revisions_by_username = {}
-            usernames_to_select = set([username for sweep in sweeps if sweep for username in sweep.keys()])
-            #pprint(usernames_to_select)
-            if len(restrict_to_usernames) > 0:
-                usernames_to_select = usernames_to_select.intersection(restrict_to_usernames)
-            #pprint(usernames_to_select)
-
-            for username in usernames_to_select:
-                if username in force_revision_for_username:
-                    revisions_by_username[username] = force_revision_for_username[username]
-                    continue
-                if not Member.objects.filter(semester=semester, user__username=username, role=Member.STUDENT).exists():
-                    print(username, "found in sweep but not a student, ignoring")
-                    continue
-                try:
-                    extension = Extension.objects.get(user__username=username, milestone=milestone)
-                    sweep_to_use = extension.slack_used
-                except Extension.DoesNotExist:
-                    pass # this is normal; users who didn't request slack have no Extension object
-                    sweep_to_use = 0 # assume no extension unless we discover otherwise
-                if sweeps[sweep_to_use] and username in sweeps[sweep_to_use]:
-                    revisions_by_username[username] = sweeps[sweep_to_use][username]
-            return revisions_by_username
-
-        # get the RevisionMap for each deadline
-        sweeps = find_sweeps(milestone.duedate, milestone.max_extension)
-        print("found sweeps for", [i for i in range(0,len(sweeps)) if sweeps[i]], "days late")
-        #pprint(sweeps)
-        # now sweep[n] is the RevisionMap for n days late (which may be None, if haven't done the n-day sweep yet)
-        revision_map = select_revisions(sweeps)
-
-    else:
-        # new Didit: milestone is stored as a CSV file in private/<semester>/code/<pset>/<pset>-<milestone>.csv
-        milestone_filename = os.path.join(ROOT, subject_name, 'private', semester_abbr, 'code', pset, pset + "-" + milestone_name + '.csv')
-
-        # milestone CSV file format:
-        #   - has a header row
-        #   - first column is username, e.g. rcm
-        #   - second column is ="revision", e.g. ="e232523"
-        #   - additional columns which are ignored by this script
-        with open(milestone_filename, 'r') as f:
-            reader = csv.reader(f)
-            next(reader) # skip header row
-            revision_map = {}
-            for row in reader:
-                username = row[0]
-                revision = re.sub(r'^="(.*)"$', r'\1', row[1]) # remove ="..." around the revision hash
-                if len(restrict_to_usernames) == 0 or username in restrict_to_usernames:
-                    revision_map[username] = revision
-
-    print("selected revisions for", len(revision_map), "users")
-    pprint(revision_map)
-
-    # revision_map: RevisionMap
-    # extracts a snapshot of each user's revision from their git repo (if that snapshot doesn't already exist),
-    # and makes a symlink to it in the right place 
-    def snapshot_revisions(revision_map):
-        # old repo locations on AFS, no longer used
-        # repos_path = os.path.join(ROOT, subject_name, 'git', semester_abbr, 'psets', pset)
-
-        # new repo locations are in github.mit.edu
-        repos_url = 'https://github.mit.edu/' + subject_name.replace('.', '') + '-' + semester_abbr + '/' + pset
-        #print 'repos_url', repos_url
-
-        # snapshots of code will be stored under code_path folder
-        code_path = os.path.join(ROOT, subject_name, 'private', semester_abbr, 'code', pset)
-        snapshots_path = os.path.join(code_path, "snapshots")
-        milestone_path = os.path.join(code_path, milestone_name)
-
-        # make parent folders in case they don't exist yet
-        [os.makedirs(path) for path in (snapshots_path, milestone_path) if not os.path.isdir(path)]
-
-        # snapshot the starting code in case it hasn't been done yet
-        # old repo: starting_repo_path = os.path.join(repos_path, 'didit/starting.git')
-        starting_repo_path = repos_url
-        git_snapshot(starting_repo_path, 'HEAD', os.path.join(code_path, 'starting/staff'))
-
-        for username in revision_map.keys():
-            revision = revision_map[username]
-            snapshot_name = username + "-" + revision
-            #print(snapshot_name)
-            
-            # old repo: user_repo = os.path.join(repos_path, username + '.git')
-            user_repo = repos_url + '-' + username
-            user_snapshot = os.path.join(code_path, "snapshots", snapshot_name)
-            git_snapshot(user_repo, revision, user_snapshot)
-            symlink_force(os.path.join('../snapshots', snapshot_name), os.path.join(milestone_path, username))
-
-    snapshot_revisions(revision_map)
+revision_map = load_revisions()
+print("selected revisions for", len(revision_map), "users")
+pprint(revision_map)
+snapshot_revisions(revision_map)
