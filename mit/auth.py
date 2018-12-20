@@ -22,16 +22,16 @@ class SSLRemoteUserBackend(RemoteUserBackend):
     def configure_user(self, user, ):
         username = user.username
         user.set_unusable_password()
-        con = ldap.open('ldap.mit.edu')
+        con = ldap.initialize('ldap://ldap.mit.edu')
         con.simple_bind_s("", "")
         dn = "dc=mit,dc=edu"
         fields = ['cn', 'sn', 'givenName', 'mail', ]
         userfilter = ldap.filter.filter_format('uid=%s', [username])
         result = con.search_s('dc=mit,dc=edu', ldap.SCOPE_SUBTREE, userfilter, fields)
         if len(result) == 1:
-            user.first_name = result[0][1]['givenName'][0]
-            user.last_name = result[0][1]['sn'][0]
-            user.email = result[0][1]['mail'][0]
+            user.first_name = result[0][1]['givenName'][0].decode("utf-8")
+            user.last_name = result[0][1]['sn'][0].decode("utf-8")
+            user.email = result[0][1]['mail'][0].decode("utf-8")
             try:
                 user.groups.add(auth.models.Group.objects.get(name='MIT'))
             except ObjectDoesNotExist:

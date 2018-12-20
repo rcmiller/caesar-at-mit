@@ -49,7 +49,7 @@ def makeuser(username, role, semester, extension_days):
 def fetch_user_data_from_LDAP(user, ):
     username = user.username
     user.set_unusable_password()
-    con = ldap.open('ldap.mit.edu')
+    con = ldap.initialize('ldap://ldap.mit.edu')
     con.simple_bind_s("", "")
     dn = "dc=mit,dc=edu"
     fields = ['cn', 'sn', 'givenName', 'mail', ]
@@ -59,11 +59,11 @@ def fetch_user_data_from_LDAP(user, ):
     if len(result) == 1:
         data = result[0][1]
         if 'givenName' in data:
-            user.first_name = data['givenName'][0] 
+            user.first_name = data['givenName'][0].decode("utf-8")
         if 'sn' in data:
-            user.last_name = data['sn'][0]
+            user.last_name = data['sn'][0].decode("utf-8")
         if 'mail' in data:
-            user.email = data['mail'][0]
+            user.email = data['mail'][0].decode("utf-8")
         user.save()
         user.profile.company = 'MIT'
         user.profile.save()
