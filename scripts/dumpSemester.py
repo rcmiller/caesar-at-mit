@@ -1,4 +1,4 @@
-#!/usr/bin/env python2.7
+#!/usr/bin/env python3
 import sys, os, django
 
 # set up Django
@@ -62,7 +62,7 @@ everything = []
 def include(model, filter):
   global everything
   queryset = filter(model.objects)
-  print >>sys.stderr, model.__name__ + ": " + str(queryset.count())
+  print(model.__name__ + ": " + str(queryset.count()), file=sys.stderr)
   everything = chain(everything, queryset_iterator(queryset))
   return queryset
 
@@ -103,7 +103,7 @@ class CustomSerializer(JSONSerializer):
         global modelInProgress
         if modelInProgress != dump_object["model"]:
           modelInProgress = dump_object["model"]
-          print >>sys.stderr, "writing " + modelInProgress + "..."
+          print("writing " + modelInProgress + "...", file=sys.stderr)
 
         return dump_object
 

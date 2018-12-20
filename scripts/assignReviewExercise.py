@@ -1,4 +1,4 @@
-#!/usr/bin/env python2.7
+#!/usr/bin/env python3
 import sys, os, django
 
 # set up Django
@@ -43,23 +43,23 @@ print(args)
 try:
   submission = Submission.objects.get(pk=args.submission)
 except Submission.DoesNotExist:
-  print "can't find submission #", args.submission
+  print("can't find submission #", args.submission)
   sys.exit(-1)
-print "using submission ", submission
+print("using submission ", submission)
 
 semester = submission.milestone.assignment.semester
-print "for semester ", semester
+print("for semester ", semester)
 
 try:
   reviewMilestone = ReviewMilestone.objects.get(assignment=submission.milestone.assignment)
 except ReviewMilestone.DoesNotExist:
-  print "can't find review milestone for this submission's submit milestone; you need to create one in the Caesar Admin page"
+  print("can't find review milestone for this submission's submit milestone; you need to create one in the Caesar Admin page")
   sys.exit(-1)
-print "for review milestone ", reviewMilestone
+print("for review milestone ", reviewMilestone)
 
 # find the files
 files = File.objects.filter(submission_id=args.submission)
-print "will assign files ", files
+print("will assign files ", files)
 
 # get the students
 query = Q(username__in=args.usernames)
@@ -68,7 +68,7 @@ if args.all_students:
 if args.all_staff:
   query = query | Q(membership__semester=semester, membership__role=Member.TEACHER)
 students = User.objects.filter(query).distinct()
-print "to reviewers ", students
+print("to reviewers ", students)
 
 def get_name(file):
   basename= os.path.basename(file.path)

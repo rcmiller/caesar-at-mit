@@ -1,4 +1,4 @@
-#!/usr/bin/env python2.7
+#!/usr/bin/env python3
 import sys, os, django
 
 # set up Django
@@ -44,7 +44,7 @@ parser.add_argument('jsonFile',
 args = parser.parse_args()
 
 for jsonFile in args.jsonFile:
-  print "processing " + jsonFile.name
+  print("processing " + jsonFile.name)
 
   # although we could read in the json with json.load(), it's faster and uses less memory
   # to scan through it line by line

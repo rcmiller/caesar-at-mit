@@ -1,4 +1,4 @@
-#!/usr/bin/env python2.7
+#!/usr/bin/env python3
 import sys, os, argparse, django
 
 # set up Django
@@ -36,7 +36,7 @@ def makeuser(username, role, semester, extension_days):
 
     member, created = Member.objects.get_or_create(user=user, semester=semester, slack_budget=extension_days)
     if not created:
-        print "...already a " + member.get_role_display() + " member"
+        print("...already a " + member.get_role_display() + " member")
     else:
         if role == "student":
             member.role = Member.STUDENT

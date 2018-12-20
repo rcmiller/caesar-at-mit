@@ -1,4 +1,4 @@
-#!/usr/bin/env python2.7
+#!/usr/bin/env python3
 import sys, os, django
 
 # set up Django
@@ -32,10 +32,10 @@ args = parser.parse_args()
 #print(args)
 
 tasks = Task.objects.filter(milestone__id=args.milestone).exclude(status='C').exclude(status="U")
-print "Preparing to close out " + str(len(tasks)) + " uncompleted tasks"
+print("Preparing to close out " + str(len(tasks)) + " uncompleted tasks")
 
 if not args.dry_run:
   tasks.update(status="U")
-  print "Changed the tasks to Unfinished."
+  print("Changed the tasks to Unfinished.")
 
 

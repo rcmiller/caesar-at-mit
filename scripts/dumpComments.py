@@ -1,4 +1,4 @@
-#!/usr/bin/env python2.7
+#!/usr/bin/env python3
 import sys, os, django, codecs
 import unicodecsv as csv
 
@@ -31,7 +31,7 @@ args = parser.parse_args()
 try:
   submission = Submission.objects.get(pk=args.submission)
 except Submission.DoesNotExist:
-  print "can't find submission #", args.submission
+  print("can't find submission #", args.submission, file=sys.stderr)
   sys.exit(-1)
 
 writer = csv.DictWriter(sys.stdout, ["username", "created", "text"])
