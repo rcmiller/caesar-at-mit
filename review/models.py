@@ -523,7 +523,7 @@ class Task(models.Model):
         return "Task: %s - %s" % (self.reviewer, self.chunk)
 
     def mark_as(self, status):
-        if status not in list(zip(*Task.STATUS_CHOICES)[0]):
+        if status not in [code for (code, label) in Task.STATUS_CHOICES]:
             raise Exception('Invalid task status')
 
         self.status = status

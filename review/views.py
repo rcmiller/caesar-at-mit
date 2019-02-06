@@ -1124,7 +1124,7 @@ def view_all_chunks(request, viewtype, submission_id, embedded=False):
         user_stats.append(user_comments)
         static_stats.append(static_comments)
         all_highlighted_lines.append(highlighted_lines_for_file)
-    file_data = zip(paths, all_highlighted_lines, files)
+    file_data = list(zip(paths, all_highlighted_lines, files))
 
     code_only = False
     comment_view = True
