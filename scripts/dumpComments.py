@@ -34,7 +34,7 @@ except Submission.DoesNotExist:
   print("can't find submission #", args.submission, file=sys.stderr)
   sys.exit(-1)
 
-writer = csv.DictWriter(sys.stdout, ["username", "created", "text"])
+writer = csv.DictWriter(sys.stdout.buffer, ["username", "created", "text"])
 writer.writeheader()
 lastTextAndUsername = None
 for comment in Comment.objects.filter(chunk__file__submission=submission).order_by("author__username","created").select_related("author"):
