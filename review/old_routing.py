@@ -123,7 +123,7 @@ where submissions.milestone_id=%s and not(user_id=%s)
             """, [submit_milestone.id, django_user.id])
     # preload the file.submission according to http://python.6.x6.nabble.com/Prefetch-related-data-when-using-raw-td4983196.html
     django_chunks = list(django_chunks)
-    prefetch_related_objects(django_chunks, ['file__submission'])
+    prefetch_related_objects(django_chunks, 'file__submission')
 
     django_tasks = Task.objects.filter(
             submission__milestone=submit_milestone) \
