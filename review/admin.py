@@ -21,6 +21,7 @@ class MemberAdmin(admin.ModelAdmin):
         return super(MemberAdmin, self).formfield_for_foreignkey(db_field, request, **kwargs)
     search_fields = ('user__username', 'user__first_name', 'user__last_name', 'semester__semester', 'semester__subject__name')
     raw_id_fields = ('user',)
+    list_select_related = ('user', 'semester__subject')
 admin.site.register(Member, MemberAdmin)
 
 class ExtensionAdmin(admin.ModelAdmin):
@@ -30,6 +31,7 @@ class ExtensionAdmin(admin.ModelAdmin):
         return super(ExtensionAdmin, self).formfield_for_foreignkey(db_field, request, **kwargs)
     search_fields = ('user__username',)
     raw_id_fields = ('user',)
+    list_select_related = ('user', 'milestone__assignment__semester__subject')
 admin.site.register(Extension, ExtensionAdmin)
 
 class AssignmentAdmin(admin.ModelAdmin):
@@ -38,16 +40,19 @@ class AssignmentAdmin(admin.ModelAdmin):
             kwargs["queryset"] = Semester.objects.order_by('-is_current_semester','-semester', 'subject__name')
         return super(AssignmentAdmin, self).formfield_for_foreignkey(db_field, request, **kwargs)
     list_display = ('name', 'semester')
+    list_select_related = ('semester__subject',)
     search_fields = ('name', 'semester__semester', 'semester__subject__name')
 admin.site.register(Assignment, AssignmentAdmin)
 
 class SubmissionAdmin(admin.ModelAdmin):
     list_display = ('id', '__str__')
+    list_select_related = ('milestone__assignment__semester__subject',)
     search_fields = ('authors__username',)
 admin.site.register(Submission, SubmissionAdmin)
 
 class ChunkAdmin(admin.ModelAdmin):
-    list_display = ('id', 'name', 'file', 'start', 'end', 'class_type', 'staff_portion', 'student_lines', 'chunk_info')
+    list_display = ('id', 'name', 'file', 'start', 'end')
+    list_select_related = ('file',)
     search_fields = ('name', 'file__path', 'file__submission__name')
     raw_id_fields = ('file',)
 admin.site.register(Chunk, ChunkAdmin)
@@ -57,6 +62,26 @@ class MilestoneAdmin(admin.ModelAdmin):
         if db_field.name == "assignment":
             kwargs["queryset"] = Assignment.objects.order_by('-semester', 'name')
         return super(MilestoneAdmin, self).formfield_for_foreignkey(db_field, request, **kwargs)
+    list_select_related = ('assignment__semester__subject',)
+
+class ReviewMilestoneAdmin(MilestoneAdmin):
+    def formfield_for_foreignkey(self, db_field, request, **kwargs):
+        if db_field.name == "submit_milestone":
+            kwargs["queryset"] = SubmitMilestone.objects.order_by('-assignment__semester', 'assignment__name', 'name')
+        return super(ReviewMilestoneAdmin, self).formfield_for_foreignkey(db_field, request, **kwargs)
+    list_display = ('id', '__str__',)
+    # def routing_link(self, obj):
+    #     return mark_safe('<a href="%s%s">%s</a>' % ('/simulate/', obj.id, 'Configure Routing'))
+    # routing_link.short_description = 'Configure Routing'
+    # def list_users_link(self, obj):
+    #     return mark_safe('<a href="%s%s">%s</a>' % ('/list_users/', obj.id, 'List Users'))
+    # list_users_link.short_description = 'List Users'
+    exclude = ('type',)
+admin.site.register(ReviewMilestone, ReviewMilestoneAdmin)
+
+class SubmitMilestoneAdmin(MilestoneAdmin):
+    list_display = ('id', '__str__', 'extension_data',)
+    list_per_page = 20 # because extension_data involves a couple SQL queries for each line
     def extension_data(self, obj):
         num_no_extensions = Member.objects.filter(semester=obj.assignment.semester, role=Member.STUDENT)\
             .exclude(user__extensions__milestone=obj).count()
@@ -66,24 +91,6 @@ class MilestoneAdmin(admin.ModelAdmin):
             extensions += ' / ' + str(num_extensions)
         return mark_safe('<a href="%s%s">%s</a>' % ('/all_extensions/', obj.id, extensions))
     extension_data.short_description = 'Extensions (0 Days / 1 Day / 2 Days / ...)'
-
-class ReviewMilestoneAdmin(MilestoneAdmin):
-    def formfield_for_foreignkey(self, db_field, request, **kwargs):
-        if db_field.name == "submit_milestone":
-            kwargs["queryset"] = SubmitMilestone.objects.order_by('-assignment__semester', 'assignment__name', 'name')
-        return super(ReviewMilestoneAdmin, self).formfield_for_foreignkey(db_field, request, **kwargs)
-    list_display = ('id', '__str__', 'extension_data', 'routing_link', 'list_users_link',)
-    def routing_link(self, obj):
-        return mark_safe('<a href="%s%s">%s</a>' % ('/simulate/', obj.id, 'Configure Routing'))
-    routing_link.short_description = 'Configure Routing'
-    def list_users_link(self, obj):
-        return mark_safe('<a href="%s%s">%s</a>' % ('/list_users/', obj.id, 'List Users'))
-    list_users_link.short_description = 'List Users'
-    exclude = ('type',)
-admin.site.register(ReviewMilestone, ReviewMilestoneAdmin)
-
-class SubmitMilestoneAdmin(MilestoneAdmin):
-    list_display = ('id', '__str__', 'extension_data',)
     exclude = ('type',)
 admin.site.register(SubmitMilestone, SubmitMilestoneAdmin)
 
@@ -95,8 +102,12 @@ class FileAdmin(admin.ModelAdmin):
 admin.site.register(File, FileAdmin)
 
 class BatchAdmin(admin.ModelAdmin):
-    list_display = ('id', 'number_of_submissions', 'loaded_at')
+    list_display = ('id', 'milestone_name', 'number_of_submissions', 'loaded_at')
+    list_per_page = 20 # because the list involves a couple SQL queries for each line, done by the methods below
     ordering = ('-id', )
+    def milestone_name(self, batch):
+        milestones = SubmitMilestone.objects.filter(submissions__batch=batch)
+        return milestones[0].__str__() if milestones.exists() else None
     def number_of_submissions(self, batch):
         return Submission.objects.filter(batch=batch).count()
     def loaded_at(self, batch):
@@ -109,6 +120,7 @@ admin.site.register(Semester)
 
 class TaskAdmin(admin.ModelAdmin):
     list_display = ('id', 'status', 'reviewer', 'submission', 'chunk')
+    list_select_related = ('reviewer', 'submission__milestone__assignment__semester__subject', 'chunk')
     ordering = ('-id',)
     fields = ('chunk', 'submission', 'reviewer', 'status', 'milestone', 'created', 'opened', 'completed',)
     readonly_fields = ('created', 'opened', 'completed')
@@ -122,6 +134,7 @@ class VoteInline(admin.TabularInline):
 class CommentAdmin(admin.ModelAdmin):
     inlines = [ VoteInline ]
     list_display = ('id', 'chunk', 'start', 'end', 'type', 'author', 'text')
+    list_select_related = ('chunk','author')
     ordering = ('-id',)
     search_fields = ('chunk__name', 'text', 'author__username', 
             'author__first_name', 'author__last_name')

@@ -232,7 +232,7 @@ class File(models.Model):
         db_table = 'files'
         unique_together = (('path', 'submission'))
     def __str__(self):
-        return '%s - %s' % (self.path, self.submission)
+        return self.path
 
 
 class ChunkManager(models.Manager):
