@@ -218,7 +218,9 @@ def new_comment(request):
     else:
         form = CommentForm(request.POST)
         if not form.is_valid():
-            raise Exception(form.errors)
+            # this happens when user presses Save without filling in anything;
+            # just return Bad Request
+            return HttpResponse(str(form.errors), content_type="text/html", status=400)
         try:
             form.similar_comment = find_similar_comment(form.cleaned_data['similar_comment'], form.cleaned_data['text'])
         except:
@@ -258,7 +260,9 @@ def reply(request):
     else:
         form = ReplyForm(request.POST)
         if not form.is_valid():
-            raise Exception(form.errors)
+            # this happens when user presses Save without filling in anything;
+            # just return Bad Request
+            return HttpResponse(str(form.errors), content_type="text/html", status=400)
         try:
             form.similar_comment = find_similar_comment(form.cleaned_data['similar_comment'], form.cleaned_data['text'])
         except:
@@ -324,7 +328,9 @@ def edit_comment(request):
     else:
         form = EditCommentForm(request.POST)
         if not form.is_valid():
-            raise Exception(form.errors)
+            # this happens when user presses Save without filling in anything;
+            # just return Bad Request
+            return HttpResponse(str(form.errors), content_type="text/html", status=400)
         comment_id = form.cleaned_data['comment_id']
         comment = Comment.objects.get(id=comment_id)
         comment.text = form.cleaned_data['text']
@@ -629,9 +635,7 @@ def bulk_add(request):
   else: # bulk adding time
     form = UserBulkAddForm(request.POST)
     if not form.is_valid():
-      return render(request, 'bulk_add_form.html', {
-        'form': form,
-        'message': 'Invalid form. Are you missing a field?'})
+      return HttpResponse(str(form.errors), content_type="text/html", status=400)
 
     # todo(mglidden): use a regex instead of three replace statements
     users = form.cleaned_data['users'].replace(' ', ',').replace('\t', ',').replace('\r\n', ',').replace('\n', ',').replace(', ', ',').split(',')
@@ -685,53 +689,54 @@ def reputation_adjustment(request):
         })
     else:
         form = ReputationForm(request.POST)
-        if form.is_valid():
-            text = form.cleaned_data['text']
-            text.replace('\n', ',')
-            pattern = re.compile(r'[\s,]+')
-            split_text = pattern.split(text)
-            success = True
-            err = ""
-            if len(split_text) % 2 == 1: #uneven number of tokens
-                success = False
-                err = "Uneven number of tokens."
-            else:
-                profiles_to_update = []
-                for i in range(0, len(split_text),2):
-                    value = 0
+        if not form.is_valid():
+            return HttpResponse(str(form.errors), content_type="text/html", status=400)
+        text = form.cleaned_data['text']
+        text.replace('\n', ',')
+        pattern = re.compile(r'[\s,]+')
+        split_text = pattern.split(text)
+        success = True
+        err = ""
+        if len(split_text) % 2 == 1: #uneven number of tokens
+            success = False
+            err = "Uneven number of tokens."
+        else:
+            profiles_to_update = []
+            for i in range(0, len(split_text),2):
+                value = 0
+                try:
+                    value = int(split_text[i+1])
+                except ValueError:
+                    success = False
+                    err = str(split_text[i+1]) + " is not an integer."
+                    break
+                if re.search('@', split_text[i]): #email
                     try:
-                        value = int(split_text[i+1])
-                    except ValueError:
+                        profile = UserProfile.objects.get(user__email = split_text[i])
+                        profiles_to_update.append((profile, value))
+                    except ObjectDoesNotExist:
                         success = False
-                        err = str(split_text[i+1]) + " is not an integer."
+                        err = str(split_text[i]) + " is not a valid email."
                         break
-                    if re.search('@', split_text[i]): #email
-                        try:
-                            profile = UserProfile.objects.get(user__email = split_text[i])
-                            profiles_to_update.append((profile, value))
-                        except ObjectDoesNotExist:
-                            success = False
-                            err = str(split_text[i]) + " is not a valid email."
-                            break
-                    else: #assume username
-                        try:
-                            profile = UserProfile.objects.get(user__username = split_text[i])
-                            profiles_to_update.append((profile, value))
-                        except ObjectDoesNotExist:
-                            success = False
-                            err = str(split_text[i]) + " is not a valid username."
-                            break
-                if success:
-                    for profile, value in profiles_to_update:
-                        profile.reputation += value
-                        profile.save()
-                        success = True
-            return render(request, 'reputation_form.html', {
-                'form': form,
-                'empty': False,
-                'success': success,
-                'err': err
-            })
+                else: #assume username
+                    try:
+                        profile = UserProfile.objects.get(user__username = split_text[i])
+                        profiles_to_update.append((profile, value))
+                    except ObjectDoesNotExist:
+                        success = False
+                        err = str(split_text[i]) + " is not a valid username."
+                        break
+            if success:
+                for profile, value in profiles_to_update:
+                    profile.reputation += value
+                    profile.save()
+                    success = True
+        return render(request, 'reputation_form.html', {
+            'form': form,
+            'empty': False,
+            'success': success,
+            'err': err
+        })
 
 @login_required
 def allusers(request):
