@@ -13,6 +13,7 @@ from django.contrib.auth import authenticate
 from django.contrib import auth
 from django.conf import settings
 from django.core.exceptions import PermissionDenied
+from django.db import IntegrityError
 
 from pygments import highlight
 from pygments.lexers import get_lexer_for_filename, get_lexer_by_name
@@ -369,7 +370,13 @@ def vote(request):
         vote.value = value
     except Vote.DoesNotExist:
         vote = Vote(comment=comment, value=value, author=request.user)
-    vote.save()
+    try:
+        vote.save()
+    except IntegrityError:
+        # This means we raced with another vote() by the same user on the same comment,
+        # probably because of network delays or impatient multiple-clicking.
+        # Just ignore this vote and let the other one win
+        pass
     # Reload the comment to make sure vote counts are up to date
     comment = Comment.objects.get(pk=comment_id)
     try:
