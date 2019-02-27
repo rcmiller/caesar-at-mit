@@ -33,7 +33,7 @@ def create_chunk(file):
   return Chunk(file=file, name=get_name(file), start=0, end=len(file.data), class_type=get_type(file), staff_portion=0, student_lines=0)
 
 def create_file(file_path, submission):
-  file_data = open(file_path).read()
+  file_data = open(file_path, errors='ignore').read()
   return File(path=file_path, submission=submission, data=file_data)
 
 def split_into_usernames(folderName):
@@ -62,7 +62,7 @@ def sha256(files):
   sorted_files.sort()
   hash = hashlib.sha256()
   for file_path in sorted_files:
-    file_data = open(file_path).read()
+    file_data = open(file_path, errors='ignore').read()
     if len(file_data) > 0:
       hash.update(file_path.encode('utf-8'))
       hash.update(file_data.encode('utf-8'))
