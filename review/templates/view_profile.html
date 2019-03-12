@@ -75,12 +75,12 @@ $(document).ready(function() {
             </div>
           </h4>
           <table class="assignment-stream">
-            {% for type, comment, snippet, is_vote, vote in review_data %}
+            {% for type, timestamp, comment, snippet, is_vote, vote in review_data %}
             <tr id="{% if is_vote %}{% if vote.value == 1 %}voteup-{{comment.id}}-{{comment.chunk.id}}
                                     {% else %}votedown-{{comment.id}}-{{comment.chunk.id}}
                                     {% endif %}
                     {% else %}comment-{{comment.id}}-{{comment.chunk.id}}
-                    {% endif %}" class="{% if user.is_staff or user == participant or review_milestone.assignment.semester in semesters_taught %}activity-line{%else%}non-activity-line{%endif%}">
+                    {% endif %}" class="{% if user.is_staff or user == participant or review_milestone.assignment.semester in semesters_taught %}activity-line{%else%}non-activity-line{%endif%} {% if timestamp <= review_milestone.duedate %}before-deadline{% else %}after-deadline{%endif%}">
               
             <td><span class="type" id="{{type}}" title="{{type}}"></span></td>
             <td> 
@@ -98,7 +98,7 @@ $(document).ready(function() {
             <td class="{% if is_vote %}grey-text{% else %}black-text{% endif %} "> {%if comment.deleted %}[deleted] {%endif%} {{ snippet }} </td>
 
               <td class="grey-text"> {{ comment.chunk.name }} </td>
-              <td class="grey-text"> {{ comment.modified }} </td>
+              <td class="grey-text timestamp"> {{ timestamp }} </td>
               
             </tr>
             {% empty %}

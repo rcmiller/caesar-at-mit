@@ -55,6 +55,15 @@ table.assignment-stream {
 .new.activity-line {
     font-weight: bold;
 }
+
+.after-deadline {
+    background-color: #ffe9e9;
+}
+
+.after-deadline .timestamp {
+    color: red;
+}
+
 .assignment-display {
     padding: 10px 10px;
     background-color: #eee;

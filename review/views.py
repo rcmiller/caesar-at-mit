@@ -602,9 +602,9 @@ def view_profile(request, username):
         for comment in comments:
             if comment.is_reply():
                 #false means not a vote activity
-                review_data.append(("reply-comment", comment, comment.text, False, None))
+                review_data.append(("reply-comment", comment.modified, comment, comment.text, False, None))
             else:
-                review_data.append(("new-comment", comment, comment.text, False, None))
+                review_data.append(("new-comment", comment.modified, comment, comment.text, False, None))
 
         votes = Vote.objects.filter(author=participant) \
                     .filter(comment__chunk__file__submission__milestone = review_milestone.submit_milestone) \
@@ -613,10 +613,10 @@ def view_profile(request, username):
         for vote in votes:
             if vote.value == 1:
                 #true means vote activity
-                review_data.append(("vote-up", vote.comment, vote.comment.text, True, vote))
+                review_data.append(("vote-up", vote.modified, vote.comment, vote.comment.text, True, vote))
             elif vote.value == -1:
-                review_data.append(("vote-down", vote.comment, vote.comment.text, True, vote))
-        review_data = sorted(review_data, key=lambda element: element[1].modified, reverse = True)
+                review_data.append(("vote-down", vote.modified, vote.comment, vote.comment.text, True, vote))
+        review_data = sorted(review_data, key=lambda element: element[1])
         review_milestone_data.append((review_milestone, review_data))
     user_memberships = request.user.membership.filter(role=Member.TEACHER)
     return render(request, 'view_profile.html', {
