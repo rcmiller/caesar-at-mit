@@ -15,7 +15,7 @@ Vagrant.configure("2") do |config|
   config.vm.provision :shell, :inline => <<SCRIPT
 
 # Setup needed by all Caesar installs
-#/var/django/caesar/setup.sh
+/var/django/caesar/setup.sh
 
 # Setup specific to Vagrant -- make a folder for the sqlite3 database.  We can't
 # just store it in the shared folder /var/django/caesar, because Sqlite3 needs to
