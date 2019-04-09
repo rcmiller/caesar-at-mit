@@ -150,9 +150,15 @@
                      value="Parameters like {0} should start with a lowercase letter and use camelCase capitalization, not underscores, according to Java #namingconvention.  #important"/>
         </module>
         
-        <module name="CatchParameterName">
+        <module name="LambdaParameterName">
             <message key="name.invalidPattern"
-                     value="{0} declares a variable name (it should not be the name of an exception class!), so it should start with a lowercase letter and use camelCase capitalization, not underscores, according to Java #namingconvention.  #important"/>
+                     value="Parameters like {0} should start with a lowercase letter and use camelCase capitalization, not underscores, according to Java #namingconvention.  #important"/>
+        </module>
+     
+        <module name="CatchParameterName">
+         <property name="format" value="^[a-z][a-zA-Z0-9]*$"/>
+         <message key="name.invalidPattern"
+                     value="{0} should be a variable name (not an exception class name!), so it should start with a lowercase letter and use camelCase capitalization, not underscores, according to Java #namingconvention.  #important"/>
         </module>
      
         <module name="StaticVariableName">
@@ -255,6 +261,11 @@
         <module name="EmptyBlock">
         </module>
 
+        <!--
+        <module name="EmptyCatchBlock">
+        </module>
+        -->
+     
         <!--
         <module name="LeftCurly"/>
         <module name="NeedBraces"/>
