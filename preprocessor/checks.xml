@@ -147,7 +147,7 @@
         
         <module name="ParameterName">
             <message key="name.invalidPattern"
-                     value="Variables like {0} should start with a lowercase letter and use camelCase capitalization, not underscores, according to Java #namingconvention.  #important"/>
+                     value="Parameters like {0} should start with a lowercase letter and use camelCase capitalization, not underscores, according to Java #namingconvention.  #important"/>
         </module>
         
         <module name="StaticVariableName">
