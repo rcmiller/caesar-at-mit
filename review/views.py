@@ -461,7 +461,7 @@ def all_activity(request, review_milestone_id, username):
             else:
                 highlighted_lines.append((number, line, False))
 
-        comments = chunk.comments.prefetch_related('votes', 'author__profile', 'author__membership__semester')
+        comments = filter_redundant_comments(chunk.comments.prefetch_related('votes', 'author__profile', 'author__membership__semester'))
         highlighted_comments = []
         highlighted_votes = []
         for comment in comments:
@@ -594,10 +594,10 @@ def view_profile(request, username):
     review_milestones = ReviewMilestone.objects.filter(assignment__semester__members__user=participant).order_by('-assigned_date')
     for review_milestone in review_milestones:
         #get all comments that the user wrote on code for this milestone, as long as they weren't the code author
-        comments = Comment.objects.filter(author=participant) \
+        comments = filter_redundant_comments(Comment.objects.filter(author=participant) \
                           .filter(chunk__file__submission__milestone=review_milestone.submit_milestone) \
                           .exclude(chunk__file__submission__authors=participant) \
-                          .select_related('chunk')
+                          .select_related('chunk'))
         review_data = []
         for comment in comments:
             if comment.is_reply():
@@ -897,6 +897,23 @@ def highlight_chunk_lines(staff_lines, chunk, start=None, end=None):
             highlighted_lines.append((number, line, False))
     return highlighted_lines
 
+# this is a workaround for a phenomenon that started appearing in Apr 2019 --
+# multiple identical comments appearing in the database.  Possibly caused by users pressing
+# Save multiple times because the server was responding too slowly.
+def filter_redundant_comments(comments):
+    def uniqueness_key(comment):
+        if comment.type == 'S': # checkstyle
+            # keep all checkstyle comments, that's not where the duping is happening
+            return str(comment.id)
+        else:
+            return "{}_{}_{}_{}_{}".format(comment.chunk_id, comment.author_id, comment.start, comment.end, comment.text)
+    comment_map = {} # maps unique-key to comment
+    for comment in comments:
+        key = uniqueness_key(comment)
+        if key not in comment_map or comment_map[key].deleted:
+            comment_map[key] = comment
+    return list(comment_map.values())
+
 @login_required
 def view_chunk(request, chunk_id):
     user = request.user
@@ -924,7 +941,8 @@ def view_chunk(request, chunk_id):
         snippet = chunk.generate_snippet(comment.start, comment.end)
         return (comment, vote, snippet)
 
-    comment_data = map(get_comment_data, chunk.comments.prefetch_related('author__profile', 'author__membership__semester'))
+    comments = filter_redundant_comments(chunk.comments.prefetch_related('author__profile', 'author__membership__semester'))
+    comment_data = map(get_comment_data, comments)
 
     highlighted_lines = highlight_chunk_lines(staff_lines, chunk)
 
@@ -1119,12 +1137,19 @@ def view_all_chunks(request, viewtype, submission_id, embedded=False):
                     # don't let author peek at code reviewing in progress
                     comments = Comment.objects.none()
                 else:
-                    comments = chunk.comments.prefetch_related('chunk', 'author__profile', 'author__membership__semester')
+                    comments = filter_redundant_comments(chunk.comments.prefetch_related('chunk', 'author__profile', 'author__membership__semester'))
 
                 comment_data = map(get_comment_data, comments)
 
-                user_comments += comments.filter(type='U').count()
-                static_comments += comments.filter(type='S').count()
+                # fix: once we are no longer using filter_redundant_comments() workaround
+                # restore these next two lines and get rid of the for loop
+                # user_comments += comments.filter(type='U').count()
+                # static_comments += comments.filter(type='S').count()
+                for comment in comments:
+                    if comment.type == 'U':
+                        user_comments += 1
+                    if comment.type == 'S':
+                        static_comments += 1
 
                 #now for the chunk part
                 start = chunk_start
