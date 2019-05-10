@@ -580,6 +580,7 @@ function registerCommentEditingHandlers() {
 
     console.log("registering event handlers");
     $('#new-comment-form #save-button').on('click', function() {
+        $(this).prop('disabled', true); // disable button so that user can't bang it repeatedly
         console.log("running submit handler");
         saveTextToForm();
         var dataString = $('#new-comment-form').serialize();
@@ -595,6 +596,7 @@ function registerCommentEditingHandlers() {
     });
 
     $('#edit-comment-form #save-button').on('click', function() {
+        $(this).prop('disabled', true); // disable button so that user can't bang it repeatedly
         saveTextToForm();
         var dataString = $('#edit-comment-form').serialize();
         $.post(caesar.urls.edit_comment, dataString, function(data) {
@@ -618,6 +620,7 @@ function registerCommentEditingHandlers() {
     });
 
     $('#reply-comment-form #save-button').on('click', function() {
+        $(this).prop('disabled', true); // disable button so that user can't bang it repeatedly
         saveTextToForm();
         var dataString = $('#reply-comment-form').serialize();
         $.post(caesar.urls.reply, dataString, function(data) {
