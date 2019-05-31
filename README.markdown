@@ -48,10 +48,12 @@ The default settings are intended for development: DEBUG is turned on, a local s
 
 ### Collect static files
 
-Collect the static files (CSS, Javascript, images, etc.) from all the apps and libraries used by Caesar into one place where Apache can serve them:
+Collect the static files (CSS, Javascript, images, etc.) from all the apps and libraries used by Caesar into one place where Apache can serve them (the folder `apache/collectedstatic/`)
 
-    ./manage.py collectstatic
+    ./manage.py collectstatic --link
 
+The `--link` option uses symlinking instead of copying; this is a good idea because it eliminates the risk that you accidentally edit the CSS or JS file in `apache/collectedstatic/` rather than its original source in `review/static/`.
+Symlinking means editing either place will modify the original.
 
 ### Initialize the database
 
@@ -158,7 +160,7 @@ Then edit settings_local.py and change the settings appropriately.
 
 Collect the static files (CSS, Javascript, images, etc.) from all the apps and libraries used by Caesar into one place where Apache can serve them:
  
-    ./manage.py collectstatic
+    ./manage.py collectstatic --link
 
 ### Initialize the database
 
