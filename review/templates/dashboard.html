@@ -12,7 +12,7 @@
 $(document).ready(function() {
 
     $('.submission-line').click(function(e) {
-      var submission_id = this.id.split('-')[1];
+      var submission_id = this.id.split('-')[1].trim();
       window.location = "/submission/all/" + submission_id;
       return false;
     });

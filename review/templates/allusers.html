@@ -15,7 +15,7 @@
 <script>
   $(document).ready(function() {
     $('.activity-line').click(function(e) {
-      var username = this.id.split('-')[1];
+      var username = this.id.split('-')[1].trim();
       window.location = "/user/" + username
       return false;
     });

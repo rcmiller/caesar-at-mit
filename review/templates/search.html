@@ -29,9 +29,9 @@
     $(function() {
         // link comments
         $('.activity-line').click(function(e) {
-          var activityType = this.id.split('-')[0];
-          var comment_Id = this.id.split('-')[1];
-          var chunk_Id = this.id.split('-')[2];
+          var activityType = this.id.split('-')[0].trim();
+          var comment_Id = this.id.split('-')[1].trim();
+          var chunk_Id = this.id.split('-')[2].trim();
           window.location = "/view/" + chunk_Id + "#" + activityType + "-" + comment_Id;
           return false;
         });
