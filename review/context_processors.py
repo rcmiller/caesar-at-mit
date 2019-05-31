@@ -1,4 +1,4 @@
-from caesar.settings import *
+from settings import *
 
 def template_constants(request):
     return {

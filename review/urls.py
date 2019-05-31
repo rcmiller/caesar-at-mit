@@ -1,10 +1,12 @@
 from django.conf.urls import url, include
 from django.views.generic import RedirectView, TemplateView
+from django.contrib import admin
 import django.contrib.auth.views
 import review.views
 from django.conf import settings
 
 urlpatterns = [
+    url(r'^admin/', admin.site.urls),
     url(r'^$', RedirectView.as_view(pattern_name='dashboard', permanent=False)),
     url(r'^dashboard/(?P<username>\w+)', review.views.student_dashboard, name='student_dashboard'),
     url(r'^dashboard/', review.views.dashboard, name='dashboard'),

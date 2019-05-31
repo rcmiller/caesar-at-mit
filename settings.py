@@ -14,7 +14,7 @@ import os
 import sys
 
 # Build paths inside the project like this: os.path.join(BASE_DIR, ...)
-BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 def project_path(s):
     return os.path.join(BASE_DIR, s)
 
@@ -69,9 +69,9 @@ LOGIN_REDIRECT_URL = '/'
 
 
 
-ROOT_URLCONF = 'caesar.urls'
+ROOT_URLCONF = 'review.urls'
 
-WSGI_APPLICATION = 'caesar.wsgi.application'
+WSGI_APPLICATION = 'wsgi.application'
 
 
 # Database
@@ -194,7 +194,7 @@ LOGGING = {
 
 # Local settings can override any of the above
 
-from caesar.settings_local import *
+from settings_local import *
 
 
 

@@ -3,9 +3,8 @@ import sys, os, argparse, django, re, datetime, itertools, json, csv
 from pprint import pprint
 
 # set up Django
-sys.path.insert(0, "/var/django")
 sys.path.insert(0, "/var/django/caesar")
-os.environ.setdefault("DJANGO_SETTINGS_MODULE", "caesar.settings")
+os.environ.setdefault("DJANGO_SETTINGS_MODULE", "settings")
 django.setup()
 from django.conf import settings
 

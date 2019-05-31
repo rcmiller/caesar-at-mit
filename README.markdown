@@ -41,7 +41,7 @@ If it asks you for a password, the password for the vagrant account is just "vag
 
 Copy the template for settings_local.py:
 
-    cd /var/django/caesar/caesar
+    cd /var/django/caesar
     cp settings_local.py.template settings_local.py
 
 The default settings are intended for development: DEBUG is turned on, a local sqlite database file is used for storing data.
@@ -149,7 +149,7 @@ Use the `mysql` client to visit your database, and run this command:
 
 To point Caesar to the right database, copy the local settings file:
 
-    cd /var/django/caesar/caesar
+    cd /var/django/caesar
     cp settings_local.py.template settings_local.py
 
 Then edit settings_local.py and change the settings appropriately.
@@ -228,3 +228,31 @@ To fix the tables:
     alter table files convert to character set utf8mb4;
     alter table comments convert to character set utf8mb4;
 
+
+
+Backing up and restoring the MySql database
+=========
+
+To download Caesar's database into a file (in a [Unicode-safe way](https://makandracards.com/makandra/595-dumping-and-importing-from-to-mysql-in-an-utf-8-safe-way)):
+
+    mysqldump --skip-extended-insert -q --default-character-set=utf8mb4 --host=HOST --user=USER --password=PASSWORD NAME -r caesar-`date '+%Y-%m-%d'`.sql
+
+Replace HOST, USER, PASSWORD, and NAME with their corresponding values in `settings_local.py`.
+
+To restore a backup to MySql, first start the `mysql` client:
+
+    mysql --host=HOST --user=USER --password=PASSWORD --database=NAME
+
+and then at its prompt:
+
+    set names 'utf8mb4';
+    source caesar-YYYY-MM-DD.sql
+
+where `caesar-YYYY-MM-DD.sql` is the backup file you want to restore.
+
+The backup can also be restored into a Sqlite3 database for use in development, by first translating it with [mysql2sqlite](https://github.com/dumblob/mysql2sqlite), and then importing it:
+
+    mysql2sqlite caesar-YYYY-MM-DD.sql > sqlite3.sql
+    sqlite3 /var/django/db/caesar.sqlite3
+    .read sqlite3.sql
+    .quit
