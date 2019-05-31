@@ -558,6 +558,10 @@ class Comment(models.Model):
     type = models.CharField(max_length=1, choices=TYPE_CHOICES, default='U')
     created = models.DateTimeField(auto_now_add=True)
     modified = models.DateTimeField(auto_now=True)
+            # note: the auto_now flag means Django automatically sets modified whenever
+            # this object is saved back to the database -- that means it changes not just
+            # when the comment is edited by its author, but also when upvote_count or
+            # downvote_count are incremented or decremented by other users. 
     edited = models.DateTimeField(null=True, blank=True)
     parent = models.ForeignKey('self', on_delete=CASCADE, related_name='child_comments',
         blank=True, null=True)

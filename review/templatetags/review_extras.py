@@ -35,3 +35,7 @@ def is_enrolled(semester, enrolled_classes):
     if enrolled_classes.filter(semester=semester):
         enrolled = True
     return enrolled
+
+@register.filter
+def too_late(timestamp, review_milestone):
+    return review_milestone and timestamp > (review_milestone.reveal_date if review_milestone.reveal_date else review_milestone.duedate)

@@ -7,6 +7,7 @@
            parent-{{ comment.parent_id }}
          {% endif %}
          {% if comment.type != 'U' %}comment-auto{% endif %}
+         {% if comment.created|too_late:review_milestone %} after-deadline {% endif %}
          expanded">
 
   {% if not comment.is_reply %}
@@ -27,9 +28,11 @@
   <div class="comment-author">
     {% with author=comment.author %}
     {% if comment.type == 'U' %}
-    {{comment.created|timesince_human}} ago {% if comment.is_edited %} * {% endif %}
+      <span class="timestamp">
+        {{comment.created|timesince_human}} ago {% if comment.is_edited %} * {% endif %}
+      </span>
     {% else %}
-    automatically generated 
+      automatically generated 
     {% endif %}
     {% if not comment.deleted %}
     by <span class="comment-author-icon

@@ -427,9 +427,10 @@ def all_activity(request, review_milestone_id, username):
     else:
         raise PermissionDenied
     
-    #get all relevant chunks
+    #get all chunks that the participant commented on (but didn't write themselves)
     chunks = Chunk.objects \
         .filter(file__submission__milestone= review_milestone.submit_milestone) \
+        .exclude(file__submission__authors=participant) \
         .filter(Q(comments__author=participant) | Q(comments__votes__author=participant)) \
         .prefetch_related('comments__votes', 'comments__author__profile')
     chunk_set = set()
@@ -477,6 +478,7 @@ def all_activity(request, review_milestone_id, username):
         review_milestone_data.append((chunk, highlighted_lines, comment_data, chunk.file))
 
     return render(request, 'all_activity.html', {
+        'review_milestone': review_milestone,
         'review_milestone_data': review_milestone_data,
         'participant': participant,
         'activity_view': True,
@@ -602,9 +604,9 @@ def view_profile(request, username):
         for comment in comments:
             if comment.is_reply():
                 #false means not a vote activity
-                review_data.append(("reply-comment", comment.modified, comment, comment.text, False, None))
+                review_data.append(("reply-comment", comment.created, comment, comment.text, False, None))
             else:
-                review_data.append(("new-comment", comment.modified, comment, comment.text, False, None))
+                review_data.append(("new-comment", comment.created, comment, comment.text, False, None))
 
         votes = Vote.objects.filter(author=participant) \
                     .filter(comment__chunk__file__submission__milestone = review_milestone.submit_milestone) \
@@ -613,9 +615,9 @@ def view_profile(request, username):
         for vote in votes:
             if vote.value == 1:
                 #true means vote activity
-                review_data.append(("vote-up", vote.modified, vote.comment, vote.comment.text, True, vote))
+                review_data.append(("vote-up", vote.created, vote.comment, vote.comment.text, True, vote))
             elif vote.value == -1:
-                review_data.append(("vote-down", vote.modified, vote.comment, vote.comment.text, True, vote))
+                review_data.append(("vote-down", vote.created, vote.comment, vote.comment.text, True, vote))
         review_data = sorted(review_data, key=lambda element: element[1])
         review_milestone_data.append((review_milestone, review_data))
     user_memberships = request.user.membership.filter(role=Member.TEACHER)
@@ -961,11 +963,14 @@ def view_chunk(request, chunk_id):
         task = None
         last_task = False
 
+    review_milestone = chunk.file.submission.milestone.review_milestone.first()
+
     context = {
         'chunk': chunk,
         'similar_chunks': chunk.get_similar_chunks(),
         'highlighted_lines': highlighted_lines,
         'comment_data': comment_data,
+        'review_milestone': review_milestone,
         'task': task,
         'task_count': task_count,
         'full_view': True,
@@ -1168,6 +1173,8 @@ def view_all_chunks(request, viewtype, submission_id, embedded=False):
 
     path_and_stats = list(zip(paths, user_stats, static_stats))
 
+    review_milestone = submission.milestone.review_milestone.first()
+
     return render(request, 'view_all_chunks.html', {
         'milestone_name': milestone_name,
         'path_and_stats': path_and_stats,
@@ -1176,7 +1183,8 @@ def view_all_chunks(request, viewtype, submission_id, embedded=False):
         'read_only': False,
         'comment_view': comment_view,
         'full_view': True,
-        'embedded': embedded
+        'embedded': embedded,
+        'review_milestone': review_milestone
     })
 
 @login_required

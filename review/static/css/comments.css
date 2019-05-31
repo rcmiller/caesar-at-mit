@@ -18,6 +18,15 @@
     background-color: #eee;
 }
 
+
+.comment.after-deadline {
+    background-color: #ffe9e9;
+}
+
+.comment.after-deadline .timestamp {
+    color: red;
+}
+
 .collapsed.comment {
     height: 16px;
     overflow: hidden;

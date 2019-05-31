@@ -28,5 +28,8 @@ late_comments = Comment.objects.filter(chunk__file__submission__milestone=review
 for comment in late_comments:
     code_authors = comment.chunk.file.submission.authors.all()
     commenter = comment.author
-    if commenter not in code_authors:
-        print("-".join([user.username for user in code_authors]), "received a late comment from", commenter, '"' + str(comment) + '"')
+    if comment.type != 'U':
+        continue # not a human comment
+    if commenter in code_authors:
+        continue # comment written by code author
+    print(comment.id, "-".join([user.username for user in code_authors]), "received a late comment from", commenter, '"' + str(comment) + '"')

@@ -80,7 +80,17 @@ $(document).ready(function() {
                                     {% else %}votedown-{{comment.id}}-{{comment.chunk.id}}
                                     {% endif %}
                     {% else %}comment-{{comment.id}}-{{comment.chunk.id}}
-                    {% endif %}" class="{% if user.is_staff or user == participant or review_milestone.assignment.semester in semesters_taught %}activity-line{%else%}non-activity-line{%endif%} {% if timestamp <= review_milestone.duedate %}before-deadline{% else %}after-deadline{%endif%}">
+                    {% endif %}" 
+                class="
+                  {% if user.is_staff or user == participant or review_milestone.assignment.semester in semesters_taught %}
+                      activity-line
+                  {% else %}
+                      non-activity-line
+                  {% endif %}
+
+                  {% if timestamp|too_late:review_milestone %} after-deadline {% endif %}
+
+                ">
               
             <td><span class="type" id="{{type}}" title="{{type}}"></span></td>
             <td> 
