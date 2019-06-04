@@ -1,4 +1,4 @@
-Django==2.1
+Django==2.2
 django-debug-toolbar
 django-extensions
 Pygments
