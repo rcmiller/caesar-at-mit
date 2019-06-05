@@ -14,10 +14,31 @@ class UserProfileAdmin(UserAdmin):
     inlines = [UserProfileInline]
 admin.site.register(User, UserProfileAdmin)
 
+def sort_and_optimize_dropdown_lists(field_name, kwargs):
+    if field_name == "semester":
+        kwargs["queryset"] = Semester.objects.order_by(
+            '-is_current_semester','-semester', 'subject__name'
+            ).select_related('subject')
+    elif field_name == "milestone":
+        kwargs["queryset"] = Milestone.objects.order_by(
+                    '-assignment__semester', 'assignment__name', 'name'
+                ).select_related('assignment__semester__subject')
+    elif field_name == "submit_milestone":
+        kwargs["queryset"] = SubmitMilestone.objects.order_by(
+                '-assignment__semester', 'assignment__name', 'name'
+            ).select_related('assignment__semester__subject')
+    elif field_name == "review_milestone":
+        kwargs["queryset"] = ReviewMilestone.objects.order_by(
+                    '-assignment__semester', 'assignment__name', 'name'
+                ).select_related('assignment__semester__subject')
+    elif field_name == "assignment":
+        kwargs["queryset"] = Assignment.objects.order_by(
+            '-semester', 'name'
+            ).select_related('semester__subject')
+
 class MemberAdmin(admin.ModelAdmin):
     def formfield_for_foreignkey(self, db_field, request, **kwargs):
-        if db_field.name == "semester":
-            kwargs["queryset"] = Semester.objects.order_by('-is_current_semester','-semester', 'subject__name')
+        sort_and_optimize_dropdown_lists(db_field.name, kwargs)
         return super(MemberAdmin, self).formfield_for_foreignkey(db_field, request, **kwargs)
     search_fields = ('user__username', 'user__first_name', 'user__last_name', 'semester__semester', 'semester__subject__name')
     autocomplete_fields = ('user',)
@@ -26,8 +47,7 @@ admin.site.register(Member, MemberAdmin)
 
 class ExtensionAdmin(admin.ModelAdmin):
     def formfield_for_foreignkey(self, db_field, request, **kwargs):
-        if db_field.name == "milestone":
-            kwargs["queryset"] = Milestone.objects.order_by('-assignment__semester', 'assignment__name', 'name')
+        sort_and_optimize_dropdown_lists(db_field.name, kwargs)
         return super(ExtensionAdmin, self).formfield_for_foreignkey(db_field, request, **kwargs)
     search_fields = ('user__username',)
     autocomplete_fields = ('user',)
@@ -36,8 +56,7 @@ admin.site.register(Extension, ExtensionAdmin)
 
 class AssignmentAdmin(admin.ModelAdmin):
     def formfield_for_foreignkey(self, db_field, request, **kwargs):
-        if db_field.name == "semester":
-            kwargs["queryset"] = Semester.objects.order_by('-is_current_semester','-semester', 'subject__name')
+        sort_and_optimize_dropdown_lists(db_field.name, kwargs)
         return super(AssignmentAdmin, self).formfield_for_foreignkey(db_field, request, **kwargs)
     list_display = ('name', 'semester')
     list_select_related = ('semester__subject',)
@@ -45,33 +64,37 @@ class AssignmentAdmin(admin.ModelAdmin):
 admin.site.register(Assignment, AssignmentAdmin)
 
 class SubmissionAdmin(admin.ModelAdmin):
+    def formfield_for_foreignkey(self, db_field, request, **kwargs):
+        sort_and_optimize_dropdown_lists('submit_milestone' if db_field.name == 'milestone' else db_field.name, kwargs)
+        return super(SubmissionAdmin, self).formfield_for_foreignkey(db_field, request, **kwargs)
     list_display = ('id', '__str__')
     list_select_related = ('milestone__assignment__semester__subject',)
     search_fields = ('authors__username',)
+    autocomplete_fields = ('authors',)
+    raw_id_fields = ('batch',)
 admin.site.register(Submission, SubmissionAdmin)
 
 class ChunkAdmin(admin.ModelAdmin):
+    def formfield_for_foreignkey(self, db_field, request, **kwargs):
+        sort_and_optimize_dropdown_lists(db_field.name, kwargs)
+        return super(ChunkAdmin, self).formfield_for_foreignkey(db_field, request, **kwargs)
     list_display = ('id', 'name', 'file', 'start', 'end')
     list_select_related = ('file',)
     search_fields = ('name', 'file__path', 'file__submission__name')
-    autocomplete_fields = ('file',)
+    raw_id_fields = ('file',)
 admin.site.register(Chunk, ChunkAdmin)
 
 class MilestoneAdmin(admin.ModelAdmin):
     def formfield_for_foreignkey(self, db_field, request, **kwargs):
-        if db_field.name == "assignment":
-            kwargs["queryset"] = Assignment.objects.order_by('-semester', 'name')
+        sort_and_optimize_dropdown_lists(db_field.name, kwargs)
         return super(MilestoneAdmin, self).formfield_for_foreignkey(db_field, request, **kwargs)
-    autocomple_fields = ('assignment',)
     list_select_related = ('assignment__semester__subject',)
     search_fields = ('name','assignment__name','assignment__semester__semester','assignment__semester__subject__name',)
 
 class ReviewMilestoneAdmin(MilestoneAdmin):
     def formfield_for_foreignkey(self, db_field, request, **kwargs):
-        if db_field.name == "submit_milestone":
-            kwargs["queryset"] = SubmitMilestone.objects.order_by('-assignment__semester', 'assignment__name', 'name')
+        sort_and_optimize_dropdown_lists(db_field.name, kwargs)
         return super(ReviewMilestoneAdmin, self).formfield_for_foreignkey(db_field, request, **kwargs)
-    autocomplete_fields = ('assignment','submit_milestone',)
     list_display = ('id', '__str__',)
     # def routing_link(self, obj):
     #     return mark_safe('<a href="%s%s">%s</a>' % ('/simulate/', obj.id, 'Configure Routing'))
@@ -83,6 +106,9 @@ class ReviewMilestoneAdmin(MilestoneAdmin):
 admin.site.register(ReviewMilestone, ReviewMilestoneAdmin)
 
 class SubmitMilestoneAdmin(MilestoneAdmin):
+    def formfield_for_foreignkey(self, db_field, request, **kwargs):
+        sort_and_optimize_dropdown_lists(db_field.name, kwargs)
+        return super(SubmitMilestoneAdmin, self).formfield_for_foreignkey(db_field, request, **kwargs)
     list_display = ('id', '__str__', 'extension_data',)
     list_per_page = 20 # because extension_data involves a couple SQL queries for each line
     def extension_data(self, obj):
@@ -98,13 +124,19 @@ class SubmitMilestoneAdmin(MilestoneAdmin):
 admin.site.register(SubmitMilestone, SubmitMilestoneAdmin)
 
 class FileAdmin(admin.ModelAdmin):
+    def formfield_for_foreignkey(self, db_field, request, **kwargs):
+        sort_and_optimize_dropdown_lists(db_field.name, kwargs)
+        return super(FileAdmin, self).formfield_for_foreignkey(db_field, request, **kwargs)
     list_display = ('id', 'path')
     search_fields = ('path','submission__authors__username',)
     ordering = ('-id',)
-    autocomplete_fields = ('submission',)
+    raw_id_fields = ('submission',)
 admin.site.register(File, FileAdmin)
 
 class BatchAdmin(admin.ModelAdmin):
+    def formfield_for_foreignkey(self, db_field, request, **kwargs):
+        sort_and_optimize_dropdown_lists(db_field.name, kwargs)
+        return super(BatchAdmin, self).formfield_for_foreignkey(db_field, request, **kwargs)
     list_display = ('id', 'milestone_name', 'number_of_submissions', 'loaded_at')
     list_per_page = 10 # because the list involves a couple SQL queries for each line, done by the methods below
     ordering = ('-id', )
@@ -122,24 +154,33 @@ admin.site.register(Subject)
 admin.site.register(Semester)
 
 class TaskAdmin(admin.ModelAdmin):
+    def formfield_for_foreignkey(self, db_field, request, **kwargs):
+        sort_and_optimize_dropdown_lists('review_milestone' if db_field.name == 'milestone' else db_field.name, kwargs)
+        return super(TaskAdmin, self).formfield_for_foreignkey(db_field, request, **kwargs)
     list_display = ('id', 'status', 'reviewer', 'submission', 'chunk')
     list_select_related = ('reviewer', 'submission__milestone__assignment__semester__subject', 'chunk')
     ordering = ('-id',)
     fields = ('chunk', 'submission', 'reviewer', 'status', 'milestone', 'created', 'opened', 'completed',)
     readonly_fields = ('created', 'opened', 'completed')
     search_fields = ('reviewer__username', 'submission__authors__username', 'milestone__assignment__semester__semester', 'milestone__assignment__semester__subject__name','milestone__assignment__name')
-    autocomplete_fields = ('submission', 'chunk', 'chunk_review', 'reviewer',)
+    autocomplete_fields = ('reviewer',)
+    raw_id_fields = ('submission', 'chunk', 'chunk_review',)
 admin.site.register(Task, TaskAdmin)
 
 class VoteInline(admin.TabularInline):
     model = Vote
-    autocomplete_fields = ('comment', 'author', )
+    raw_id_fields = ('comment',)
+    autocomplete_fields = ('author', )
 class CommentAdmin(admin.ModelAdmin):
+    def formfield_for_foreignkey(self, db_field, request, **kwargs):
+        sort_and_optimize_dropdown_lists(db_field.name, kwargs)
+        return super(CommentAdmin, self).formfield_for_foreignkey(db_field, request, **kwargs)
     inlines = [ VoteInline ]
     list_display = ('id', 'chunk', 'start', 'end', 'type', 'author', 'text')
     list_select_related = ('chunk','author')
     ordering = ('-id',)
     search_fields = ('chunk__name', 'text', 'author__username', 
             'author__first_name', 'author__last_name')
-    raw_id_fields = ('chunk', 'author', 'batch', 'parent', 'similar_comment')
+    raw_id_fields = ('chunk', 'batch', 'parent', 'similar_comment',)
+    autocomplete_fields = ('author', )
 admin.site.register(Comment, CommentAdmin)
