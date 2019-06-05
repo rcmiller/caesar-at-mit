@@ -1,5 +1,5 @@
 from django.core import serializers
-from django.db.models import Q, Count, Max
+from django.db.models import Q, Count, Max, Sum
 from django.shortcuts import render, redirect, get_object_or_404, get_list_or_404
 from django.template import RequestContext
 from django.contrib.auth.models import User
@@ -94,15 +94,17 @@ def dashboard_for(request, dashboard_user, new_task_count = 0, allow_requesting_
         .order_by('completed').reverse()
     completed_tasks = annotate_tasks_with_counts(completed_tasks)
 
-    def collect_submission_data(submissions):
-        data = []
-        for submission in submissions:
-            user_comments = Comment.objects.filter(chunk__file__submission=submission).filter(type='U').count()
-            static_comments = Comment.objects.filter(chunk__file__submission=submission).filter(type='S').count()
-            reviewer_count = User.objects.filter(tasks__chunk__file__submission = submission).count()
-            data.append((submission, reviewer_count, submission.last_modified,
-                                      user_comments, static_comments))
-        return data
+    def annotate_submissions_with_counts(submissions):
+        return submissions.annotate(
+            num_reviewers=Count('files__chunks__tasks__reviewer', distinct=True),
+            num_user_comments=Count('files__chunks__comments', 
+                                    filter=Q(files__chunks__comments__type='U'),
+                                    distinct=True),
+            num_static_analysis_comments=Count('files__chunks__comments',
+                                               filter=Q(files__chunks__comments__type='S'),
+                                               distinct=True)
+        )
+
 
     #get all the submissions that the user submitted
     submissions = Submission.objects.filter(authors=dashboard_user) \
@@ -110,9 +112,9 @@ def dashboard_for(request, dashboard_user, new_task_count = 0, allow_requesting_
         .order_by('milestone__duedate')\
         .filter(milestone__assignment__semester__is_current_semester=True)\
         .annotate(last_modified=Max('files__chunks__comments__modified'))\
-        .reverse()
-
-    submission_data = collect_submission_data(submissions)
+        .reverse()\
+        .select_related('milestone__assignment__semester')
+    submissions = annotate_submissions_with_counts(submissions)
 
     #get all the submissions that the user submitted, in previous semesters
     old_submissions = Submission.objects.filter(authors=dashboard_user) \
@@ -120,35 +122,55 @@ def dashboard_for(request, dashboard_user, new_task_count = 0, allow_requesting_
         .order_by('milestone__duedate')\
         .exclude(milestone__assignment__semester__is_current_semester=True)\
         .annotate(last_modified=Max('files__chunks__comments__modified'))\
-        .reverse()
+        .reverse()\
+        .select_related('milestone__assignment__semester')
+    old_submissions = annotate_submissions_with_counts(old_submissions)
 
-    old_submission_data = collect_submission_data(old_submissions)
+    now = datetime.datetime.now()
 
-    #find the current submissions
-    current_milestones = SubmitMilestone.objects.filter(assignment__semester__members__user=dashboard_user, assignment__semester__members__role=Member.STUDENT, assignment__semester__is_current_semester=True)\
-        .filter(assigned_date__lt= datetime.datetime.now())\
-        .order_by('duedate')
+    # find the current milestones
+    current_milestones = SubmitMilestone.objects.filter(
+            assignment__semester__members__user=dashboard_user,
+            assignment__semester__members__role=Member.STUDENT,
+            assignment__semester__is_current_semester=True
+        )\
+        .filter(assigned_date__lt=now)\
+        .order_by('duedate')\
+        .all()
 
+    # fetch dashboard_user's extensions for the current milestones,
+    # and make a milestone_id -> Extension object map.  This lets us do only 1 SQL query
+    # for the extensions, rather than one per milestone.
+    my_extensions = { 
+        extension.milestone_id : extension 
+        for extension in Extension.objects.filter(milestone__in=current_milestones, user=dashboard_user)
+    }
+    
     current_milestone_data = []
     for milestone in current_milestones:
         try:
-            user_extension = milestone.extensions.get(user=dashboard_user)
+            user_extension = my_extensions[milestone.id]
             extension_days = user_extension.slack_used
-        except ObjectDoesNotExist:
+        except KeyError:
             user_extension = None
             extension_days = 0
-        if datetime.datetime.now() <= milestone.duedate + datetime.timedelta(days=milestone.max_extension if milestone.allow_unextending_to_past else extension_days) + datetime.timedelta(hours=2):
+        if now <= milestone.duedate + datetime.timedelta(days=milestone.max_extension if milestone.allow_unextending_to_past else extension_days) + datetime.timedelta(hours=2):
             current_milestone_data.append((milestone, user_extension))
 
     #find total slack days left for each membership
-    current_memberships = Member.objects.filter(user=dashboard_user, role=Member.STUDENT, semester__is_current_semester=True).select_related('semester__subject')
+    current_memberships = Member.objects.filter(
+            user=dashboard_user, 
+            role=Member.STUDENT,
+            semester__is_current_semester=True)\
+        .select_related('semester__subject')\
+        .annotate(slack_used=Sum('semester__assignments__milestones__extensions__slack_used',
+                                 filter=Q(semester__assignments__milestones__extensions__user=dashboard_user)))
 
     current_slack_data = []
     for membership in current_memberships:
         total_slack = membership.slack_budget
-        if total_slack > 0:
-            used_slack = sum([extension.slack_used for extension in Extension.objects.filter(user=dashboard_user, milestone__assignment__semester=membership.semester)])
-            slack_left = total_slack - used_slack
+        if membership.slack_budget > 0:
+            slack_left = membership.slack_budget - membership.slack_used
             current_slack_data.append((membership.semester, slack_left))
 
     return render(request, 'dashboard.html', {
@@ -156,8 +178,8 @@ def dashboard_for(request, dashboard_user, new_task_count = 0, allow_requesting_
         'completed_tasks': completed_tasks,
         'old_completed_tasks': old_completed_tasks,
         'new_task_count': new_task_count,
-        'submission_data': submission_data,
-        'old_submission_data': old_submission_data,
+        'submissions': submissions,
+        'old_submissions': old_submissions,
         'current_milestone_data': current_milestone_data,
         'allow_requesting_more_tasks': allow_requesting_more_tasks,
         'current_slack_data': current_slack_data,

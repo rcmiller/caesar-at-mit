@@ -123,11 +123,11 @@ $(document).ready(function() {
 </table>
 </div>
 
-{% if submission_data or old_submission_data %}
+{% if submissions or old_submissions %}
 <div class='span12 submitted-assignments'>
 <h2 class="task-header">your submitted assignments</h2>
 <div>
-  {% for submission, reviewer_count, last_modified, user_comments, static_comments in submission_data %}
+  {% for submission in submissions %}
   
   <div id ="submission-{{submission.id}}" class="submission-line">
     <span class="chunk-name">
@@ -135,26 +135,26 @@ $(document).ready(function() {
     </span>
     <span class="task-stats">
       <span class="reviewer-count" title="Reviewers">
-          {{ reviewer_count }}
+          {{ submission.num_reviewers }}
       </span>
       <span class="comment-count" title="User Comments">
-        {{ user_comments }}
+        {{ submission.num_user_comments }}
       </span>
       <span class="robot-count" title="Automatic Comments">
-        {{ static_comments }}
+        {{ submission.num_static_analysis_comments }}
       </span>
     </span>
 <!--    <span class="task-snippet">
-      {{ last_modified }}
+      {{ submission.last_modified }}
     </span>-->
   </div>
   {% empty %}
   {% endfor %}
 </div>
-{% if old_submission_data %}
+{% if old_submissions %}
     <div class="history-submissions"> show previous semesters </div>
     <div id="historic-submissions" class="task-list">
-      {% for submission, reviewer_count, last_modified, user_comments, static_comments in old_submission_data %}
+      {% for submission in old_submissions %}
   
       <div id ="submission-{{submission.id}}" class="submission-line">
         <span class="chunk-name">
@@ -162,17 +162,17 @@ $(document).ready(function() {
         </span>
         <span class="task-stats">
           <span class="reviewer-count" title="Reviewers">
-              {{ reviewer_count }}
+              {{ submission.num_reviewers }}
           </span>
           <span class="comment-count" title="User Comments">
-            {{ user_comments }}
+            {{ submission.num_user_comments }}
           </span>
           <span class="robot-count" title="Automatic Comments">
-            {{ static_comments }}
+            {{ submission.num_static_analysis_comments }}
           </span>
         </span>
 <!--        <span class="task-snippet">
-          {{ last_modified }}
+          {{ submission.last_modified }}
        </span>-->
       </div>
       {% empty %}
