@@ -20,7 +20,7 @@ class MemberAdmin(admin.ModelAdmin):
             kwargs["queryset"] = Semester.objects.order_by('-is_current_semester','-semester', 'subject__name')
         return super(MemberAdmin, self).formfield_for_foreignkey(db_field, request, **kwargs)
     search_fields = ('user__username', 'user__first_name', 'user__last_name', 'semester__semester', 'semester__subject__name')
-    raw_id_fields = ('user',)
+    autocomplete_fields = ('user',)
     list_select_related = ('user', 'semester__subject')
 admin.site.register(Member, MemberAdmin)
 
@@ -30,7 +30,7 @@ class ExtensionAdmin(admin.ModelAdmin):
             kwargs["queryset"] = Milestone.objects.order_by('-assignment__semester', 'assignment__name', 'name')
         return super(ExtensionAdmin, self).formfield_for_foreignkey(db_field, request, **kwargs)
     search_fields = ('user__username',)
-    raw_id_fields = ('user',)
+    autocomplete_fields = ('user',)
     list_select_related = ('user', 'milestone__assignment__semester__subject')
 admin.site.register(Extension, ExtensionAdmin)
 
@@ -54,7 +54,7 @@ class ChunkAdmin(admin.ModelAdmin):
     list_display = ('id', 'name', 'file', 'start', 'end')
     list_select_related = ('file',)
     search_fields = ('name', 'file__path', 'file__submission__name')
-    raw_id_fields = ('file',)
+    autocomplete_fields = ('file',)
 admin.site.register(Chunk, ChunkAdmin)
 
 class MilestoneAdmin(admin.ModelAdmin):
@@ -62,13 +62,16 @@ class MilestoneAdmin(admin.ModelAdmin):
         if db_field.name == "assignment":
             kwargs["queryset"] = Assignment.objects.order_by('-semester', 'name')
         return super(MilestoneAdmin, self).formfield_for_foreignkey(db_field, request, **kwargs)
+    autocomple_fields = ('assignment',)
     list_select_related = ('assignment__semester__subject',)
+    search_fields = ('name','assignment__name','assignment__semester__semester','assignment__semester__subject__name',)
 
 class ReviewMilestoneAdmin(MilestoneAdmin):
     def formfield_for_foreignkey(self, db_field, request, **kwargs):
         if db_field.name == "submit_milestone":
             kwargs["queryset"] = SubmitMilestone.objects.order_by('-assignment__semester', 'assignment__name', 'name')
         return super(ReviewMilestoneAdmin, self).formfield_for_foreignkey(db_field, request, **kwargs)
+    autocomplete_fields = ('assignment','submit_milestone',)
     list_display = ('id', '__str__',)
     # def routing_link(self, obj):
     #     return mark_safe('<a href="%s%s">%s</a>' % ('/simulate/', obj.id, 'Configure Routing'))
@@ -98,12 +101,12 @@ class FileAdmin(admin.ModelAdmin):
     list_display = ('id', 'path')
     search_fields = ('path','submission__authors__username',)
     ordering = ('-id',)
-    raw_id_fields = ('submission',)
+    autocomplete_fields = ('submission',)
 admin.site.register(File, FileAdmin)
 
 class BatchAdmin(admin.ModelAdmin):
     list_display = ('id', 'milestone_name', 'number_of_submissions', 'loaded_at')
-    list_per_page = 20 # because the list involves a couple SQL queries for each line, done by the methods below
+    list_per_page = 10 # because the list involves a couple SQL queries for each line, done by the methods below
     ordering = ('-id', )
     def milestone_name(self, batch):
         milestones = SubmitMilestone.objects.filter(submissions__batch=batch)
@@ -125,12 +128,12 @@ class TaskAdmin(admin.ModelAdmin):
     fields = ('chunk', 'submission', 'reviewer', 'status', 'milestone', 'created', 'opened', 'completed',)
     readonly_fields = ('created', 'opened', 'completed')
     search_fields = ('reviewer__username', 'submission__authors__username', 'milestone__assignment__semester__semester', 'milestone__assignment__semester__subject__name','milestone__assignment__name')
-    raw_id_fields = ('submission', 'chunk', 'chunk_review', 'reviewer',)
+    autocomplete_fields = ('submission', 'chunk', 'chunk_review', 'reviewer',)
 admin.site.register(Task, TaskAdmin)
 
 class VoteInline(admin.TabularInline):
     model = Vote
-    raw_id_fields = ('comment', 'author', )
+    autocomplete_fields = ('comment', 'author', )
 class CommentAdmin(admin.ModelAdmin):
     inlines = [ VoteInline ]
     list_display = ('id', 'chunk', 'start', 'end', 'type', 'author', 'text')
