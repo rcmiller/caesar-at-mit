@@ -84,10 +84,9 @@ Browse to [10.18.6.31](http://10.18.6.31) on your laptop and try to log in, eith
 
 To edit code, work with git, and use other dev tools, just work with the caesar-web folder that you checked out to your laptop.  This folder tree is synced automatically with /var/django/caesar in the VM.  You don't have to go inside the VM.
 
-The only thing you *do* have to do from the VM is restart Apache whenever you edit a Python source file.  Here's how:
+The only thing you *do* have to do from the VM is touch wsgi.py whenever you edit a Python source file and want Caesar to restart:
 
-    vagrant ssh              # if you're not already logged into your VM
-    sudo apachectl graceful  # to restart Apache and force it to reload Caesar
+    touch wsgi.py    # can be done either from your laptop or from within vagrant ssh
 
 The Django debug toolbar ("DjDt") appears on the right side of Caesar's web pages whenever you have DEBUG=True in settings_local.py.  The toolbar is particularly useful for viewing debug messages. To print messages, use
 

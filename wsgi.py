@@ -9,6 +9,12 @@ https://docs.djangoproject.com/en/1.9/howto/deployment/wsgi/
 
 import os, sys
 
+import locale
+print('locale.getdefaultlocale()', locale.getdefaultlocale(), file=sys.stderr)
+print('locale.getpreferredencoding()', locale.getpreferredencoding(), file=sys.stderr)
+
+
+
 from django.core.wsgi import get_wsgi_application
 
 path = os.path.dirname(os.path.abspath(__file__))

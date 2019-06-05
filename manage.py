@@ -2,6 +2,10 @@
 import os
 import sys
 
+import locale
+print('locale.getdefaultlocale()', locale.getdefaultlocale(), file=sys.stderr)
+print('locale.getpreferredencoding()', locale.getpreferredencoding(), file=sys.stderr)
+
 if __name__ == "__main__":
     os.environ.setdefault("DJANGO_SETTINGS_MODULE", "settings")
 
