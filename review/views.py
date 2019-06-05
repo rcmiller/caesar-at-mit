@@ -1044,9 +1044,11 @@ def highlight_comment_chunk_line(request, comment_id):
 @login_required
 def view_all_chunks(request, viewtype, submission_id, embedded=False):
     user = request.user
-    submission = Submission.objects.get(id = submission_id)
-    submit_milestone = SubmitMilestone.objects.get(submissions=submission)
-    semester = Semester.objects.get(assignments__milestones__submitmilestone=submit_milestone)
+    submission = Submission.objects.filter(id=submission_id).select_related(
+        'milestone__assignment__semester'
+    ).get()
+    submit_milestone = submission.milestone
+    semester = submit_milestone.assignment.semester
     is_author = submission.has_author(user)
 
     if Member.objects.filter(user=user, semester=semester, role=Member.TEACHER).exists():
@@ -1066,7 +1068,13 @@ def view_all_chunks(request, viewtype, submission_id, embedded=False):
     except ReviewMilestone.DoesNotExist:
         hide_reviews_from_author = False
 
-    files = File.objects.filter(submission=submission_id).order_by('path').prefetch_related('chunks')
+    files = File.objects.filter(submission=submission_id).order_by('path').prefetch_related(
+        'submission__milestone__assignment__semester',
+        'chunks',
+        'chunks__staffmarkers',
+        'chunks__comments__author__profile',
+        'chunks__comments__author__membership__semester',
+    )
     if not files:
         raise Http404
 
@@ -1092,25 +1100,15 @@ def view_all_chunks(request, viewtype, submission_id, embedded=False):
 
     formatter = HtmlFormatter(cssclass='syntax', nowrap=True)
     for afile in files:
-        staff_lines = StaffMarker.objects.filter(chunk__file=afile).order_by('start_line', 'end_line')
         lexer = get_best_lexer(afile.path)
         #prepare the file - get the lines that are part of chunk and the ones that aren't
+        highlighted_lines = []
         highlighted_lines_for_file = []
         numbers, lines = list(zip(*afile.lines))
         highlighted = list(zip(numbers,
                 highlight(afile.data, lexer, formatter).splitlines()))
 
-        highlighted_lines = []
-        staff_line_index = 0
-        for number, line in highlighted:
-            if staff_line_index < len(staff_lines) and number >= staff_lines[staff_line_index].start_line and number <= staff_lines[staff_line_index].end_line:
-                while staff_line_index < len(staff_lines) and number == staff_lines[staff_line_index].end_line:
-                    staff_line_index += 1
-                highlighted_lines.append((number, line, True))
-            else:
-                highlighted_lines.append((number, line, False))
-
-        chunks = afile.chunks.order_by('start')
+        chunks = afile.chunks.all()#.order_by('start')
         total_lines = len(afile.lines)
         offset = numbers[0]
         start = offset
@@ -1118,6 +1116,16 @@ def view_all_chunks(request, viewtype, submission_id, embedded=False):
         user_comments = 0
         static_comments = 0
         for chunk in chunks:
+            staff_lines = chunk.staffmarkers.all()#StaffMarker.objects.filter(chunk__file=afile).order_by('start_line', 'end_line')
+            staff_line_index = 0
+            for number, line in highlighted:
+                if staff_line_index < len(staff_lines) and number >= staff_lines[staff_line_index].start_line and number <= staff_lines[staff_line_index].end_line:
+                    while staff_line_index < len(staff_lines) and number == staff_lines[staff_line_index].end_line:
+                        staff_line_index += 1
+                    highlighted_lines.append((number, line, True))
+                else:
+                    highlighted_lines.append((number, line, False))
+
             if len(chunk.lines)==0:
                 continue
             numbers, lines = list(zip(*chunk.lines))
@@ -1139,7 +1147,7 @@ def view_all_chunks(request, viewtype, submission_id, embedded=False):
                     # don't let author peek at code reviewing in progress
                     comments = Comment.objects.none()
                 else:
-                    comments = filter_redundant_comments(chunk.comments.prefetch_related('chunk', 'author__profile', 'author__membership__semester'))
+                    comments = filter_redundant_comments(chunk.comments.all())
 
                 comment_data = map(get_comment_data, comments)
 

@@ -290,21 +290,22 @@ class Chunk(models.Model):
         else:
           cinfo = self.chunk_info
 
-        # get the authors.
-        authors = [str(u.username) for u in self.file.submission.authors.filter()]
-        # get the assigned reviewers.
-        assigned_reviewers = User.objects.filter(tasks__submission=self.file.submission)
-        reviewers = [str(u.username) for u in assigned_reviewers]
+        if cinfo.find('restricted') != -1:
+            # get the authors.
+            authors = [str(u.username) for u in self.file.submission.authors.filter()]
+            # get the assigned reviewers.
+            assigned_reviewers = User.objects.filter(tasks__submission=self.file.submission)
+            reviewers = [str(u.username) for u in assigned_reviewers]
+            # logging to make sure the reviewers and authors lists are correct.
+            #logger = logging.getLogger(__name__)
+            #logger.info("authors" + str(authors) + "\n reviewers:" + str(reviewers));
 
-        allowed_users = authors + reviewers
+            allowed_users = authors + reviewers
 
-        if cinfo.find('restricted') != -1 and not str(usr.username) in allowed_users:
-          # Don't stop super users from viewing chunks.
-          if not usr.is_superuser:
-            raise PermissionDenied
-        # logging to make sure the reviewers and authors lists are correct.
-        #logger = logging.getLogger(__name__)
-        #logger.info("authors" + str(authors) + "\n reviewers:" + str(reviewers));
+            if not str(usr.username) in allowed_users:
+              # Don't stop super users from viewing chunks.
+              if not usr.is_superuser:
+                raise PermissionDenied
 
     def _split_lines(self):
         file_data = self.file.data
