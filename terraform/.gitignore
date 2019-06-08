@@ -1,0 +1,6 @@
+terraform.tfvars
+.terraform
+*.tfstate*
+deployed-bundle.tgz
+crontab
+krb5.keytab

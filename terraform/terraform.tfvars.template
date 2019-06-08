@@ -1,0 +1,12 @@
+# username for CSAIL OpenStack; typically yourusername@csail.mit.edu
+openstack_user_name = "..."
+
+# your password for CSAIL OpenStack
+openstack_password  = "..."
+
+# the name of the ssh keypair on OpenStack to use for the new VM
+keypair  = "..."
+
+# the 6.031 staff password; the ubuntu user's password on the new VM
+# is set to this
+staff_password = "..."
