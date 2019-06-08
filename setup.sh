@@ -19,7 +19,7 @@ sudo systemd-run --property="After=apt-daily.service apt-daily-upgrade.service" 
 
 # Install Linux packages we need.
 sudo apt-get update
-sudo apt-get upgrade
+#sudo apt-get upgrade
 sudo apt-get install -y apache2 apache2-dev libapache2-mod-wsgi-py3 # for Apache
 sudo apt-get install -y sqlite3 # for development
 sudo apt-get install -y libmysqlclient-dev libldap2-dev libsasl2-dev # MySQL, LDAP
