@@ -1,5 +1,8 @@
 #!/bin/sh
 
+# fixes https://bugs.launchpad.net/ubuntu/+source/eglibc/+bug/935681
+export DEBIAN_FRONTEND=noninteractive
+
 CAESAR_DIR=/var/django/caesar
 
 # Set time zone.

@@ -2,10 +2,7 @@ variable "openstack_user_name" { }
 variable "openstack_password" { }
 variable "keypair" { }
 variable "staff_password" { }
-
-variable "volume-uuid" {
-  default = "c4bba436-b4a2-4e08-8629-21ccad322276"
-}
+variable "private_key_file" { }
 
 variable "boot-image-uuid" {
   default = "7966c914-5241-4509-9b31-aa3b62a476d1" # CSAIL-Ubuntu-18.04LTS+autofs
@@ -85,7 +82,7 @@ resource "null_resource" "provision" {
       type     = "ssh"
       user     = "ubuntu"
       host     = openstack_compute_instance_v2.caesar.access_ip_v4
-      private_key = file("/Users/rcm/.ssh/id2_rsa")
+      private_key = file(var.private_key_file)
   }
 
   # upload the application code
