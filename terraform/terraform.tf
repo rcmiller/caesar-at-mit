@@ -137,6 +137,9 @@ resource "null_resource" "provision" {
       "sudo chgrp ubuntu /etc/krb5.keytab",
       "sudo chmod 600 /etc/krb5.keytab",
 
+      # make update script executable
+      "chmod a+x /var/django/caesar/preprocessor/update-6.031.sh",
+
       # do all the remaining installation and setup
       "/var/django/caesar/setup.sh"
     ]
