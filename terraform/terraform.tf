@@ -19,7 +19,7 @@ provider "openstack" {
 # This is the virtual machine.
 resource "openstack_compute_instance_v2" "caesar" {
   name = "caesar"
-  flavor_name = "ups.1c1g"
+  flavor_name = "ups.2c2g"
   image_id = var.boot-image-uuid
 
   block_device {
