@@ -1,0 +1,10 @@
+pip-tools # used for pip-compile, which pins the versions of these packages
+django==2.2
+django-debug-toolbar
+django-extensions
+Pygments
+python-ldap
+mysqlclient
+django-tools
+unicodecsv
+

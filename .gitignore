@@ -10,3 +10,4 @@ collectedstatic
 apache/ssl
 local-testing
 *.log
+preprocessor/update-6.031.sh
